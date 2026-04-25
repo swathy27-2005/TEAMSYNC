@@ -1,0 +1,22 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /tasks/{doc} {
+      allow read, write: if request.auth != null;
+    }
+    match /users/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+    match /crash_reports/{doc} {
+      allow create: if request.auth != null;
+      allow read: if request.auth != null;
+    }
+    match /fcm_tokens/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+    match /chat_general/{doc} { allow read, write: if request.auth != null; }
+    match /chat_development/{doc} { allow read, write: if request.auth != null; }
+    match /chat_design/{doc} { allow read, write: if request.auth != null; }
+    match /chat_random/{doc} { allow read, write: if request.auth != null; }
+  }
+}

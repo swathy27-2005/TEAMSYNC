@@ -1,0 +1,2182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>TeamSync — Smart Task & Collaboration App</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --surface2: #1c1c26;
+    --surface3: #252533;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --accent: #7c6ee6;
+    --accent2: #a594f9;
+    --accent-glow: rgba(124,110,230,0.15);
+    --text: #f0eff8;
+    --text2: #9b99b5;
+    --text3: #5e5c7a;
+    --success: #3ecf8e;
+    --danger: #e85d4a;
+    --warning: #f0a05a;
+    --info: #5aa0e8;
+    --fcm: #FF6D00;
+    --analytics: #00BCD4;
+    --crashlytics: #FF5252;
+    --font-head: 'Syne', sans-serif;
+    --font-body: 'DM Sans', sans-serif;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --radius-lg: 18px;
+    --shadow: 0 4px 24px rgba(0,0,0,0.4);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font-body); font-size: 14px; line-height: 1.6; min-height: 100vh; overflow-x: hidden; }
+
+  /* AUTH SCREEN */
+  #auth-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 2rem; background: var(--bg); position: relative; overflow: hidden; }
+  #auth-screen::before { content: ''; position: absolute; width: 600px; height: 600px; background: radial-gradient(circle, rgba(124,110,230,0.12) 0%, transparent 70%); top: -100px; right: -100px; pointer-events: none; }
+  #auth-screen::after { content: ''; position: absolute; width: 400px; height: 400px; background: radial-gradient(circle, rgba(94,92,122,0.1) 0%, transparent 70%); bottom: -50px; left: -50px; pointer-events: none; }
+  .auth-card { background: var(--surface); border: 1px solid var(--border2); border-radius: var(--radius-lg); padding: 2.5rem; width: 100%; max-width: 420px; position: relative; z-index: 1; }
+  .auth-logo { display: flex; align-items: center; gap: 10px; margin-bottom: 2rem; }
+  .auth-logo-icon { width: 38px; height: 38px; background: var(--accent); border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+  .auth-logo-icon svg { width: 20px; height: 20px; fill: white; }
+  .auth-logo span { font-family: var(--font-head); font-size: 1.4rem; font-weight: 700; letter-spacing: -0.5px; }
+  .auth-tabs { display: flex; background: var(--surface2); border-radius: var(--radius-sm); padding: 3px; margin-bottom: 1.5rem; gap: 3px; }
+  .auth-tab { flex: 1; padding: 0.5rem; text-align: center; border-radius: 6px; cursor: pointer; font-family: var(--font-body); font-size: 13px; font-weight: 500; color: var(--text2); border: none; background: transparent; transition: all 0.2s; }
+  .auth-tab.active { background: var(--surface3); color: var(--text); }
+  .form-group { margin-bottom: 1rem; }
+  .form-group label { display: block; font-size: 12px; font-weight: 500; color: var(--text2); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .form-group input { width: 100%; padding: 0.65rem 0.9rem; background: var(--surface2); border: 1px solid var(--border2); border-radius: var(--radius-sm); color: var(--text); font-family: var(--font-body); font-size: 14px; outline: none; transition: border-color 0.2s; }
+  .form-group input:focus { border-color: var(--accent); }
+  .form-group input::placeholder { color: var(--text3); }
+  .btn { width: 100%; padding: 0.7rem; border: none; border-radius: var(--radius-sm); font-family: var(--font-body); font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+  .btn-primary { background: var(--accent); color: white; margin-bottom: 0.75rem; }
+  .btn-primary:hover { background: var(--accent2); transform: translateY(-1px); }
+  .btn-google { background: var(--surface2); color: var(--text); border: 1px solid var(--border2); display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 0.7rem; border-radius: var(--radius-sm); font-family: var(--font-body); font-size: 14px; cursor: pointer; transition: all 0.2s; }
+  .btn-google:hover { border-color: var(--border); background: var(--surface3); }
+  .divider { display: flex; align-items: center; gap: 12px; margin: 1rem 0; color: var(--text3); font-size: 12px; }
+  .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .auth-error { background: rgba(232,93,74,0.1); border: 1px solid rgba(232,93,74,0.3); border-radius: var(--radius-sm); padding: 0.6rem 0.9rem; color: #e85d4a; font-size: 13px; margin-bottom: 1rem; display: none; }
+
+  /* MAIN APP */
+  #app { display: none; height: 100vh; flex-direction: row; }
+
+  /* SIDEBAR */
+  .sidebar { width: 230px; min-width: 230px; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 1.25rem 0.75rem; }
+  .sidebar-logo { display: flex; align-items: center; gap: 8px; padding: 0 0.5rem 1.5rem; border-bottom: 1px solid var(--border); margin-bottom: 1rem; }
+  .sidebar-logo-icon { width: 30px; height: 30px; background: var(--accent); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+  .sidebar-logo-icon svg { width: 16px; height: 16px; fill: white; }
+  .sidebar-logo span { font-family: var(--font-head); font-size: 1.1rem; font-weight: 700; }
+  .nav-section { margin-bottom: 1.5rem; }
+  .nav-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--text3); padding: 0 0.5rem; margin-bottom: 0.5rem; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 0.55rem 0.75rem; border-radius: var(--radius-sm); cursor: pointer; color: var(--text2); font-size: 13.5px; font-weight: 400; transition: all 0.15s; margin-bottom: 2px; position: relative; }
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+  .nav-item.active { background: var(--accent-glow); color: var(--accent2); font-weight: 500; }
+  .nav-item svg { width: 16px; height: 16px; flex-shrink: 0; opacity: 0.7; }
+  .nav-item.active svg { opacity: 1; }
+  .nav-badge { margin-left: auto; background: var(--accent); color: white; font-size: 10px; font-weight: 600; min-width: 18px; height: 18px; border-radius: 9px; display: flex; align-items: center; justify-content: center; padding: 0 5px; }
+  .sidebar-user { margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--border); }
+  .user-pill { display: flex; align-items: center; gap: 10px; padding: 0.5rem 0.5rem; border-radius: var(--radius-sm); }
+  .user-avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: white; flex-shrink: 0; overflow: hidden; }
+  .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .user-info { flex: 1; min-width: 0; }
+  .user-name { font-size: 13px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .user-role { font-size: 11px; color: var(--text3); }
+  .logout-btn { background: none; border: none; color: var(--text3); cursor: pointer; padding: 4px; border-radius: 4px; transition: color 0.2s; }
+  .logout-btn:hover { color: var(--danger); }
+
+  /* MAIN CONTENT */
+  .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .topbar { height: 56px; border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 1.5rem; gap: 1rem; flex-shrink: 0; background: var(--surface); }
+  .topbar-title { font-family: var(--font-head); font-size: 1.1rem; font-weight: 700; flex: 1; }
+  .topbar-actions { display: flex; align-items: center; gap: 0.5rem; }
+  .icon-btn { background: none; border: 1px solid var(--border2); border-radius: var(--radius-sm); padding: 6px 8px; color: var(--text2); cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 12px; font-family: var(--font-body); transition: all 0.15s; }
+  .icon-btn:hover { background: var(--surface2); color: var(--text); border-color: var(--border); }
+  .icon-btn svg { width: 15px; height: 15px; }
+  .add-btn { background: var(--accent); color: white; border: none; border-radius: var(--radius-sm); padding: 6px 14px; font-size: 13px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 6px; font-family: var(--font-body); transition: all 0.15s; }
+  .add-btn:hover { background: var(--accent2); }
+  .page { flex: 1; overflow-y: auto; padding: 1.5rem; display: none; }
+  .page.active { display: block; }
+
+  /* DASHBOARD */
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.1rem 1.25rem; }
+  .stat-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.4rem; font-weight: 600; }
+  .stat-value { font-family: var(--font-head); font-size: 1.8rem; font-weight: 700; line-height: 1; margin-bottom: 0.3rem; }
+  .stat-sub { font-size: 11px; color: var(--text3); }
+  .stat-success { color: var(--success); }
+  .stat-warning { color: var(--warning); }
+  .stat-danger { color: var(--danger); }
+  .stat-info { color: var(--info); }
+  .section-title { font-family: var(--font-head); font-size: 0.95rem; font-weight: 700; margin-bottom: 1rem; color: var(--text); }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.1rem 1.25rem; }
+
+  /* TASKS */
+  .task-filters { display: flex; gap: 0.5rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
+  .filter-btn { padding: 5px 12px; border-radius: 20px; border: 1px solid var(--border2); background: transparent; color: var(--text2); font-size: 12px; font-weight: 500; cursor: pointer; font-family: var(--font-body); transition: all 0.15s; }
+  .filter-btn.active, .filter-btn:hover { background: var(--accent-glow); border-color: var(--accent); color: var(--accent2); }
+  .task-list { display: flex; flex-direction: column; gap: 0.5rem; }
+  .task-item { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.85rem 1rem; display: flex; align-items: flex-start; gap: 0.75rem; transition: border-color 0.15s; }
+  .task-item:hover { border-color: var(--border2); }
+  .task-item.done { opacity: 0.5; }
+  .task-check { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--border2); flex-shrink: 0; margin-top: 1px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+  .task-check.checked { background: var(--success); border-color: var(--success); }
+  .task-check.checked::after { content: ''; width: 6px; height: 6px; border-radius: 50%; background: white; }
+  .task-body { flex: 1; min-width: 0; }
+  .task-title { font-size: 13.5px; font-weight: 500; color: var(--text); margin-bottom: 2px; }
+  .task-item.done .task-title { text-decoration: line-through; }
+  .task-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .tag { font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.3px; }
+  .tag-high { background: rgba(232,93,74,0.15); color: #e85d4a; }
+  .tag-medium { background: rgba(240,160,90,0.15); color: #f0a05a; }
+  .tag-low { background: rgba(62,207,142,0.15); color: #3ecf8e; }
+  .tag-design { background: rgba(124,110,230,0.15); color: #a594f9; }
+  .tag-dev { background: rgba(90,160,232,0.15); color: #5aa0e8; }
+  .task-date { font-size: 11px; color: var(--text3); }
+  .task-delete { background: none; border: none; color: var(--text3); cursor: pointer; padding: 4px; border-radius: 4px; transition: color 0.15s; opacity: 0; }
+  .task-item:hover .task-delete { opacity: 1; }
+  .task-delete:hover { color: var(--danger); }
+
+  /* ADD TASK MODAL */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); z-index: 100; display: none; align-items: center; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--surface); border: 1px solid var(--border2); border-radius: var(--radius-lg); padding: 1.75rem; width: 100%; max-width: 440px; }
+  .modal-title { font-family: var(--font-head); font-size: 1.1rem; font-weight: 700; margin-bottom: 1.25rem; }
+  .modal-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+  .modal-select { width: 100%; padding: 0.6rem 0.8rem; background: var(--surface2); border: 1px solid var(--border2); border-radius: var(--radius-sm); color: var(--text); font-family: var(--font-body); font-size: 13px; outline: none; transition: border-color 0.2s; }
+  .modal-select:focus { border-color: var(--accent); }
+  .modal-actions { display: flex; gap: 0.75rem; margin-top: 1.25rem; }
+  .btn-cancel { flex: 1; padding: 0.65rem; background: var(--surface2); border: 1px solid var(--border2); border-radius: var(--radius-sm); color: var(--text2); font-family: var(--font-body); font-size: 13px; cursor: pointer; }
+  .btn-save { flex: 2; padding: 0.65rem; background: var(--accent); border: none; border-radius: var(--radius-sm); color: white; font-family: var(--font-body); font-size: 13px; font-weight: 500; cursor: pointer; }
+
+  /* CHAT */
+  .chat-layout { display: grid; grid-template-columns: 220px 1fr; gap: 0; height: calc(100vh - 56px - 3rem); }
+  .chat-sidebar { border-right: 1px solid var(--border); padding-right: 1rem; overflow-y: auto; }
+  .chat-room-item { display: flex; align-items: center; gap: 8px; padding: 0.6rem 0.75rem; border-radius: var(--radius-sm); cursor: pointer; transition: background 0.15s; margin-bottom: 2px; }
+  .chat-room-item:hover { background: var(--surface2); }
+  .chat-room-item.active { background: var(--accent-glow); }
+  .room-icon { width: 30px; height: 30px; border-radius: 8px; background: var(--surface3); display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+  .room-name { font-size: 13px; font-weight: 500; color: var(--text); }
+  .room-preview { font-size: 11px; color: var(--text3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .chat-area { display: flex; flex-direction: column; padding-left: 1.5rem; min-height: 0; }
+  .chat-header { display: flex; align-items: center; gap: 10px; padding-bottom: 1rem; border-bottom: 1px solid var(--border); margin-bottom: 1rem; flex-shrink: 0; }
+  .chat-messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem; padding-bottom: 1rem; min-height: 0; }
+  .msg { display: flex; gap: 10px; }
+  .msg.own { flex-direction: row-reverse; }
+  .msg-avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--surface3); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; flex-shrink: 0; color: var(--accent2); overflow: hidden; }
+  .msg-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .msg-content { max-width: 65%; }
+  .msg-name { font-size: 11px; color: var(--text3); margin-bottom: 3px; }
+  .msg.own .msg-name { text-align: right; }
+  .msg-bubble { background: var(--surface2); border-radius: 12px 12px 12px 3px; padding: 0.6rem 0.9rem; font-size: 13.5px; color: var(--text); word-break: break-word; }
+  .msg.own .msg-bubble { background: var(--accent); border-radius: 12px 12px 3px 12px; }
+  .msg-time { font-size: 10px; color: var(--text3); margin-top: 3px; }
+  .msg.own .msg-time { text-align: right; }
+  .chat-input-area { display: flex; gap: 0.75rem; padding-top: 1rem; border-top: 1px solid var(--border); flex-shrink: 0; }
+  .chat-input { flex: 1; padding: 0.65rem 0.9rem; background: var(--surface2); border: 1px solid var(--border2); border-radius: var(--radius-sm); color: var(--text); font-family: var(--font-body); font-size: 13.5px; outline: none; transition: border-color 0.2s; }
+  .chat-input:focus { border-color: var(--accent); }
+  .send-btn { background: var(--accent); border: none; border-radius: var(--radius-sm); padding: 0 14px; color: white; cursor: pointer; display: flex; align-items: center; transition: background 0.15s; }
+  .send-btn:hover { background: var(--accent2); }
+  .send-btn svg { width: 16px; height: 16px; }
+
+  /* NOTIFICATIONS */
+  .notif-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.25rem; display: flex; gap: 1rem; margin-bottom: 0.5rem; transition: border-color 0.15s; }
+  .notif-card:hover { border-color: var(--border2); }
+  .notif-card.unread { border-left: 3px solid var(--accent); }
+  .notif-icon { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .notif-content { flex: 1; }
+  .notif-title { font-size: 13.5px; font-weight: 500; color: var(--text); }
+  .notif-body { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  .notif-time { font-size: 11px; color: var(--text3); margin-top: 4px; }
+
+  /* FCM SECTION */
+  .fcm-panel { background: linear-gradient(135deg, rgba(255,109,0,0.08) 0%, rgba(255,109,0,0.03) 100%); border: 1px solid rgba(255,109,0,0.25); border-radius: var(--radius); padding: 1.25rem; margin-bottom: 1rem; }
+  .fcm-panel .section-title { color: var(--fcm); display: flex; align-items: center; gap: 8px; }
+  .fcm-token-box { background: var(--surface2); border-radius: var(--radius-sm); padding: 0.75rem; font-family: monospace; font-size: 10px; color: var(--text3); word-break: break-all; line-height: 1.6; max-height: 60px; overflow-y: auto; margin: 0.75rem 0; border: 1px solid var(--border); }
+  .fcm-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+  .fcm-btn { padding: 6px 14px; border-radius: var(--radius-sm); border: 1px solid rgba(255,109,0,0.4); background: rgba(255,109,0,0.1); color: var(--fcm); font-size: 12px; font-weight: 500; cursor: pointer; font-family: var(--font-body); transition: all 0.15s; }
+  .fcm-btn:hover { background: rgba(255,109,0,0.2); }
+  .fcm-btn.primary { background: var(--fcm); color: white; border-color: var(--fcm); }
+  .fcm-btn.primary:hover { opacity: 0.9; }
+  .fcm-status { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; margin-left: auto; }
+  .status-dot { width: 7px; height: 7px; border-radius: 50%; }
+  .status-dot.active { background: var(--success); animation: pulse 2s infinite; }
+  .status-dot.inactive { background: var(--text3); }
+  .status-dot.pending { background: var(--warning); animation: pulse 1s infinite; }
+
+  /* ANALYTICS SECTION */
+  .analytics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+  .bar-chart { display: flex; align-items: flex-end; gap: 6px; height: 80px; margin-top: 0.75rem; }
+  .bar { flex: 1; background: var(--accent); border-radius: 4px 4px 0 0; opacity: 0.7; min-height: 4px; transition: opacity 0.2s; }
+  .bar:hover { opacity: 1; }
+  .bar-labels { display: flex; gap: 6px; margin-top: 4px; }
+  .bar-label { flex: 1; text-align: center; font-size: 9px; color: var(--text3); }
+
+  .analytics-event-log { background: var(--surface2); border-radius: var(--radius-sm); padding: 0.75rem; max-height: 200px; overflow-y: auto; font-family: monospace; font-size: 11px; }
+  .event-log-item { padding: 4px 0; border-bottom: 1px solid var(--border); color: var(--text2); display: flex; gap: 8px; align-items: flex-start; }
+  .event-log-item:last-child { border-bottom: none; }
+  .event-time { color: var(--text3); flex-shrink: 0; }
+  .event-name { color: var(--analytics); font-weight: 600; }
+  .event-params { color: var(--text3); }
+  .event-log-item.error .event-name { color: var(--crashlytics); }
+
+  /* CRASHLYTICS */
+  .crash-panel { background: linear-gradient(135deg, rgba(255,82,82,0.08) 0%, rgba(255,82,82,0.03) 100%); border: 1px solid rgba(255,82,82,0.25); border-radius: var(--radius); padding: 1.25rem; margin-bottom: 1rem; }
+  .crash-panel .section-title { color: var(--crashlytics); display: flex; align-items: center; gap: 8px; }
+  .crash-report { background: var(--surface2); border-radius: var(--radius-sm); padding: 0.75rem; margin: 0.5rem 0; border-left: 3px solid var(--crashlytics); }
+  .crash-report-title { font-size: 12px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+  .crash-report-meta { font-size: 11px; color: var(--text3); display: flex; gap: 12px; flex-wrap: wrap; }
+  .crash-stack { background: var(--bg); border-radius: 4px; padding: 0.5rem; font-family: monospace; font-size: 10px; color: var(--text3); margin-top: 6px; max-height: 80px; overflow-y: auto; line-height: 1.7; }
+  .crash-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.75rem; }
+  .crash-btn { padding: 6px 14px; border-radius: var(--radius-sm); border: 1px solid rgba(255,82,82,0.4); background: rgba(255,82,82,0.1); color: var(--crashlytics); font-size: 12px; font-weight: 500; cursor: pointer; font-family: var(--font-body); transition: all 0.15s; }
+  .crash-btn:hover { background: rgba(255,82,82,0.2); }
+  .crash-btn.primary { background: var(--crashlytics); color: white; border-color: var(--crashlytics); }
+  .crash-btn.primary:hover { opacity: 0.9; }
+
+  /* USER PROPERTIES PANEL */
+  .user-prop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.75rem; }
+  .user-prop-item { background: var(--surface2); border-radius: var(--radius-sm); padding: 0.6rem 0.75rem; }
+  .user-prop-key { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; }
+  .user-prop-val { font-size: 13px; font-weight: 500; color: var(--text); margin-top: 2px; }
+
+  /* PROFILE */
+  .profile-header { display: flex; align-items: center; gap: 1.5rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 1rem; }
+  .profile-avatar { width: 70px; height: 70px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 700; color: white; flex-shrink: 0; overflow: hidden; }
+  .profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .profile-name { font-family: var(--font-head); font-size: 1.3rem; font-weight: 700; }
+  .profile-email { font-size: 13px; color: var(--text2); }
+  .profile-role { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; background: var(--accent-glow); color: var(--accent2); border: 1px solid rgba(124,110,230,0.3); border-radius: 4px; padding: 3px 8px; margin-top: 5px; }
+
+  /* TOAST */
+  #toast-container { position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 999; display: flex; flex-direction: column; gap: 0.5rem; }
+  .toast { background: var(--surface3); border: 1px solid var(--border2); border-radius: var(--radius); padding: 0.75rem 1rem; font-size: 13px; color: var(--text); min-width: 240px; animation: slide-in 0.3s ease; display: flex; align-items: center; gap: 8px; }
+  .toast.success { border-left: 3px solid var(--success); }
+  .toast.error { border-left: 3px solid var(--danger); }
+  .toast.info { border-left: 3px solid var(--info); }
+  .toast.fcm { border-left: 3px solid var(--fcm); }
+  .toast.crash { border-left: 3px solid var(--crashlytics); }
+  @keyframes slide-in { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--success); display: inline-block; margin-right: 4px; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+  .empty-state { text-align: center; padding: 3rem 1rem; color: var(--text3); }
+  .empty-state svg { width: 48px; height: 48px; opacity: 0.2; margin-bottom: 1rem; }
+  .empty-state p { font-size: 14px; }
+
+  /* SERVICE BADGES */
+  .service-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .badge-fcm { background: rgba(255,109,0,0.15); color: var(--fcm); border: 1px solid rgba(255,109,0,0.3); }
+  .badge-analytics { background: rgba(0,188,212,0.15); color: var(--analytics); border: 1px solid rgba(0,188,212,0.3); }
+  .badge-crash { background: rgba(255,82,82,0.15); color: var(--crashlytics); border: 1px solid rgba(255,82,82,0.3); }
+
+  /* PERMISSION BANNER */
+  .permission-banner { background: rgba(255,109,0,0.08); border: 1px solid rgba(255,109,0,0.3); border-radius: var(--radius-sm); padding: 0.75rem 1rem; display: flex; align-items: center; gap: 0.75rem; font-size: 12px; color: var(--text2); margin-bottom: 1rem; }
+  .permission-banner button { margin-left: auto; padding: 5px 12px; border-radius: 6px; background: var(--fcm); border: none; color: white; font-size: 11px; font-weight: 600; cursor: pointer; font-family: var(--font-body); white-space: nowrap; }
+
+  /* ANALYTICS EVENT BUTTONS */
+  .event-btns { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.75rem; }
+  .event-btn { padding: 5px 12px; border-radius: var(--radius-sm); border: 1px solid rgba(0,188,212,0.3); background: rgba(0,188,212,0.08); color: var(--analytics); font-size: 11px; font-weight: 500; cursor: pointer; font-family: var(--font-body); transition: all 0.15s; }
+  .event-btn:hover { background: rgba(0,188,212,0.18); }
+</style>
+</head>
+<body>
+
+<!-- AUTH SCREEN -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="auth-logo-icon">
+        <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+      </div>
+      <span>TeamSync</span>
+    </div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="switchAuthTab('login')">Sign In</button>
+      <button class="auth-tab" onclick="switchAuthTab('register')">Register</button>
+    </div>
+    <div id="auth-error" class="auth-error"></div>
+    <div id="login-form">
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="login-email" placeholder="you@example.com"/>
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="login-pass" placeholder="••••••••"/>
+      </div>
+      <button class="btn btn-primary" onclick="handleLogin()">Sign In →</button>
+      <div class="divider">or</div>
+      <button class="btn-google" onclick="handleGoogleSignIn()">
+        <svg width="16" height="16" viewBox="0 0 24 24">
+          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+        </svg>
+        Continue with Google
+      </button>
+    </div>
+    <div id="register-form" style="display:none">
+      <div class="form-group">
+        <label>Full Name</label>
+        <input type="text" id="reg-name" placeholder="Alex Johnson"/>
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="reg-email" placeholder="you@example.com"/>
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="reg-pass" placeholder="Min. 6 characters"/>
+      </div>
+      <div class="form-group">
+        <label>Role</label>
+        <select class="modal-select" id="reg-role" style="width:100%">
+          <option value="member">Member</option>
+          <option value="admin">Admin</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" onclick="handleRegister()">Create Account →</button>
+      <div class="divider">or</div>
+      <button class="btn-google" onclick="handleGoogleSignIn()">
+        <svg width="16" height="16" viewBox="0 0 24 24">
+          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+        </svg>
+        Continue with Google
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+      </div>
+      <span>TeamSync</span>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Main</div>
+      <div class="nav-item active" onclick="navigate('dashboard')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </div>
+      <div class="nav-item" onclick="navigate('tasks')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+        Tasks
+        <span class="nav-badge" id="task-badge">0</span>
+      </div>
+      <div class="nav-item" onclick="navigate('chat')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+        Team Chat
+        <span class="dot"></span>
+      </div>
+      <div class="nav-item" onclick="navigate('notifications')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+        Notifications
+        <span class="nav-badge" id="notif-badge">3</span>
+      </div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Firebase Services</div>
+      <div class="nav-item" onclick="navigate('fcm')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><circle cx="12" cy="3" r="1"/></svg>
+        Push (FCM)
+        <span id="fcm-nav-dot" style="margin-left:auto;width:7px;height:7px;border-radius:50%;background:var(--text3)"></span>
+      </div>
+      <div class="nav-item" onclick="navigate('analytics')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        Analytics
+      </div>
+      <div class="nav-item" onclick="navigate('crashlytics')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+        Crashlytics
+        <span id="crash-nav-badge" class="nav-badge" style="background:var(--crashlytics)">0</span>
+      </div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Account</div>
+      <div class="nav-item" onclick="navigate('profile')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        Profile
+      </div>
+    </div>
+    <div class="sidebar-user">
+      <div class="user-pill">
+        <div class="user-avatar" id="sidebar-avatar">?</div>
+        <div class="user-info">
+          <div class="user-name" id="sidebar-name">Loading...</div>
+          <div class="user-role" id="sidebar-role">member</div>
+        </div>
+        <button class="logout-btn" onclick="handleLogout()" title="Sign out">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div class="main-content">
+    <div class="topbar">
+      <div class="topbar-title" id="topbar-title">Dashboard</div>
+      <div class="topbar-actions">
+        <div id="topbar-firebase-badges" style="display:flex;gap:6px;align-items:center">
+          <span class="service-badge badge-fcm" id="badge-fcm">FCM ●</span>
+          <span class="service-badge badge-analytics" id="badge-analytics">Analytics ●</span>
+          <span class="service-badge badge-crash" id="badge-crash">Crashlytics ●</span>
+        </div>
+        <div id="topbar-add-task" style="display:none">
+          <button class="add-btn" onclick="openAddTask()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add Task
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div class="page active" id="page-dashboard">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Total Tasks</div>
+          <div class="stat-value stat-info" id="stat-total">0</div>
+          <div class="stat-sub">This workspace</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Completed</div>
+          <div class="stat-value stat-success" id="stat-done">0</div>
+          <div class="stat-sub">Tasks finished</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">In Progress</div>
+          <div class="stat-value stat-warning" id="stat-pending">0</div>
+          <div class="stat-sub">Active tasks</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">High Priority</div>
+          <div class="stat-value stat-danger" id="stat-high">0</div>
+          <div class="stat-sub">Need attention</div>
+        </div>
+      </div>
+      <!-- Firebase Services Overview on Dashboard -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.5rem">
+        <div class="card" style="border-color:rgba(255,109,0,0.2)">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:0.5rem">
+            <span style="font-size:18px">🔔</span>
+            <span style="font-family:var(--font-head);font-size:0.85rem;font-weight:700;color:var(--fcm)">FCM Push</span>
+            <span class="fcm-status" id="dash-fcm-status" style="margin-left:auto"><span class="status-dot inactive" id="dash-fcm-dot"></span><span id="dash-fcm-txt" style="color:var(--text3)">Initializing</span></span>
+          </div>
+          <div style="font-size:11px;color:var(--text3)">Device token generated & ready for server-side push targeting</div>
+        </div>
+        <div class="card" style="border-color:rgba(0,188,212,0.2)">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:0.5rem">
+            <span style="font-size:18px">📊</span>
+            <span style="font-family:var(--font-head);font-size:0.85rem;font-weight:700;color:var(--analytics)">Analytics</span>
+            <span class="fcm-status" style="margin-left:auto"><span class="status-dot active"></span><span style="color:var(--success)">Active</span></span>
+          </div>
+          <div style="font-size:11px;color:var(--text3)">Events tracked: <strong id="dash-event-count" style="color:var(--analytics)">0</strong> — screen views, actions, errors</div>
+        </div>
+        <div class="card" style="border-color:rgba(255,82,82,0.2)">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:0.5rem">
+            <span style="font-size:18px">🛡️</span>
+            <span style="font-family:var(--font-head);font-size:0.85rem;font-weight:700;color:var(--crashlytics)">Crashlytics</span>
+            <span class="fcm-status" style="margin-left:auto"><span class="status-dot active"></span><span style="color:var(--success)">Monitoring</span></span>
+          </div>
+          <div style="font-size:11px;color:var(--text3)">Crashes caught: <strong id="dash-crash-count" style="color:var(--crashlytics)">0</strong> — errors logged & reported</div>
+        </div>
+      </div>
+      <div class="two-col">
+        <div class="card">
+          <div class="section-title">Recent Tasks</div>
+          <div id="dashboard-tasks" class="task-list"></div>
+        </div>
+        <div class="card">
+          <div class="section-title">Team Activity</div>
+          <div id="activity-feed" style="display:flex;flex-direction:column;gap:0.75rem;margin-top:0.5rem"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TASKS PAGE -->
+    <div class="page" id="page-tasks">
+      <div class="task-filters">
+        <button class="filter-btn active" onclick="filterTasks('all', this)">All</button>
+        <button class="filter-btn" onclick="filterTasks('pending', this)">Pending</button>
+        <button class="filter-btn" onclick="filterTasks('done', this)">Completed</button>
+        <button class="filter-btn" onclick="filterTasks('high', this)">High Priority</button>
+      </div>
+      <div class="task-list" id="task-list-full"></div>
+    </div>
+
+    <!-- CHAT PAGE -->
+    <div class="page" id="page-chat">
+      <div class="chat-layout">
+        <div class="chat-sidebar">
+          <div class="nav-label" style="padding:0;margin-bottom:0.75rem">Channels</div>
+          <div class="chat-room-item active" onclick="switchRoom('general', this)">
+            <div class="room-icon">#</div>
+            <div><div class="room-name">general</div><div class="room-preview">Team announcements</div></div>
+          </div>
+          <div class="chat-room-item" onclick="switchRoom('development', this)">
+            <div class="room-icon">⚙</div>
+            <div><div class="room-name">development</div><div class="room-preview">Dev discussions</div></div>
+          </div>
+          <div class="chat-room-item" onclick="switchRoom('design', this)">
+            <div class="room-icon">🎨</div>
+            <div><div class="room-name">design</div><div class="room-preview">UI/UX work</div></div>
+          </div>
+          <div class="chat-room-item" onclick="switchRoom('random', this)">
+            <div class="room-icon">🎲</div>
+            <div><div class="room-name">random</div><div class="room-preview">Off-topic chat</div></div>
+          </div>
+        </div>
+        <div class="chat-area">
+          <div class="chat-header">
+            <span class="dot"></span>
+            <span style="font-family:var(--font-head);font-weight:700" id="chat-room-name">#general</span>
+            <span style="font-size:12px;color:var(--text3);margin-left:4px">— Team announcements & updates</span>
+          </div>
+          <div class="chat-messages" id="chat-messages"></div>
+          <div class="chat-input-area">
+            <input class="chat-input" id="chat-input" placeholder="Message #general..." onkeydown="handleChatKey(event)"/>
+            <button class="send-btn" onclick="sendMessage()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- NOTIFICATIONS PAGE -->
+    <div class="page" id="page-notifications">
+      <div id="notif-list"></div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         FCM PAGE — Firebase Cloud Messaging (Push Notifications)
+         ═══════════════════════════════════════════════════════════ -->
+    <div class="page" id="page-fcm">
+      <div id="fcm-permission-banner" class="permission-banner" style="display:none">
+        <span>🔔</span>
+        <span>Enable browser notifications to receive push messages from TeamSync</span>
+        <button onclick="requestNotificationPermission()">Enable Notifications</button>
+      </div>
+
+      <!-- FCM Token & Status -->
+      <div class="fcm-panel">
+        <div class="section-title">
+          <span style="font-size:18px">🔔</span> Firebase Cloud Messaging (FCM)
+          <span class="fcm-status" style="margin-left:auto;font-size:12px">
+            <span class="status-dot" id="fcm-status-dot" style="background:var(--warning)"></span>
+            <span id="fcm-status-text" style="color:var(--text2)">Initializing…</span>
+          </span>
+        </div>
+        <div style="font-size:12px;color:var(--text3);margin:0.5rem 0 0.75rem">
+          FCM generates a unique device registration token. Your backend uses this token to target specific devices with push notifications — even when the app is closed.
+        </div>
+
+        <div style="font-size:11px;color:var(--text2);margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px">Device Registration Token</div>
+        <div class="fcm-token-box" id="fcm-token-display">Requesting permission & generating token…</div>
+
+        <div class="fcm-actions">
+          <button class="fcm-btn" onclick="copyFCMToken()">📋 Copy Token</button>
+          <button class="fcm-btn" onclick="refreshFCMToken()">🔄 Refresh Token</button>
+          <button class="fcm-btn primary" onclick="sendLocalFCMDemo()">🚀 Simulate Push</button>
+          <button class="fcm-btn" onclick="simulateServerPush()">☁️ Server Push Demo</button>
+        </div>
+      </div>
+
+      <!-- FCM Setup Instructions -->
+      <div class="card" style="margin-bottom:1rem;border-color:rgba(255,109,0,0.2)">
+        <div class="section-title" style="color:var(--fcm)">⚙️ FCM Setup Requirements</div>
+        <div style="font-size:12px;color:var(--text3);margin-bottom:0.75rem">FCM requires 3 things to work. Check off each one:</div>
+        <div style="display:flex;flex-direction:column;gap:0.6rem;font-size:12px">
+          <div style="display:flex;align-items:flex-start;gap:8px">
+            <span id="fcm-req-1-icon" style="color:var(--warning);flex-shrink:0">○</span>
+            <div><strong style="color:var(--text)">HTTPS hosting</strong> — <span style="color:var(--text3)">FCM does not work on <code style="font-size:11px;color:var(--danger)">file://</code> or HTTP. Deploy to Firebase Hosting or any HTTPS server.</span></div>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:8px">
+            <span id="fcm-req-2-icon" style="color:var(--warning);flex-shrink:0">○</span>
+            <div>
+              <strong style="color:var(--text)">firebase-messaging-sw.js</strong> — <span style="color:var(--text3)">Must be served from the root of your domain.</span>
+              <button onclick="downloadSWFile()" style="margin-left:8px;padding:2px 8px;border-radius:4px;border:1px solid rgba(255,109,0,0.4);background:rgba(255,109,0,0.1);color:var(--fcm);font-size:11px;cursor:pointer">⬇ Download SW file</button>
+            </div>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:8px">
+            <span id="fcm-req-3-icon" style="color:var(--warning);flex-shrink:0">○</span>
+            <div><strong style="color:var(--text)">Valid VAPID key</strong> — <span style="color:var(--text3)">Get from Firebase Console → Project Settings → Cloud Messaging → Web Push certificates → Generate key pair. Replace <code style="font-size:11px;color:var(--danger)">VAPID_KEY</code> in the script.</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Push Notification Composer -->
+      <div class="card" style="margin-bottom:1rem">
+        <div class="section-title">📝 Push Notification Composer</div>
+        <div style="font-size:12px;color:var(--text3);margin-bottom:1rem">Craft and simulate a push notification payload — mirrors what your backend sends via FCM HTTP v1 API</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.75rem">
+          <div class="form-group" style="margin:0">
+            <label>Title</label>
+            <input type="text" id="push-title" value="🔔 TeamSync Alert" style="width:100%;padding:0.6rem 0.8rem;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);font-family:var(--font-body);font-size:13px;outline:none"/>
+          </div>
+          <div class="form-group" style="margin:0">
+            <label>Category</label>
+            <select id="push-category" class="modal-select">
+              <option value="task">📋 Task Update</option>
+              <option value="mention">💬 Mention</option>
+              <option value="deploy">🚀 Deployment</option>
+              <option value="alert">⚠️ Alert</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:0.75rem">
+          <label>Body</label>
+          <input type="text" id="push-body" value="You have a new task assigned to you." style="width:100%;padding:0.6rem 0.8rem;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);font-family:var(--font-body);font-size:13px;outline:none"/>
+        </div>
+        <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:0.75rem;margin-bottom:0.75rem;border:1px solid var(--border)">
+          <div style="font-size:10px;color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600">FCM HTTP v1 API Payload Preview</div>
+          <pre id="fcm-payload-preview" style="font-family:monospace;font-size:10px;color:var(--text2);white-space:pre-wrap;line-height:1.7"></pre>
+        </div>
+        <button class="fcm-btn primary" onclick="sendComposedPush()" style="width:100%;justify-content:center;display:flex;padding:8px">Send Notification →</button>
+      </div>
+
+      <!-- FCM Message History -->
+      <div class="card">
+        <div class="section-title">📨 Push Message History</div>
+        <div id="fcm-message-log" style="display:flex;flex-direction:column;gap:0.5rem;margin-top:0.75rem">
+          <div style="text-align:center;padding:1.5rem;color:var(--text3);font-size:13px">No push notifications yet. Click "Simulate Push" to test.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         ANALYTICS PAGE — Firebase Analytics (User tracking)
+         ═══════════════════════════════════════════════════════════ -->
+    <div class="page" id="page-analytics">
+      <!-- Analytics SDK Status Banner -->
+      <div id="analytics-status-banner" style="display:none;padding:0.75rem 1rem;border-radius:var(--radius-sm);margin-bottom:1rem;font-size:12px;gap:8px;align-items:flex-start"></div>
+
+      <div class="analytics-grid">
+        <div class="stat-card" style="border-color:rgba(0,188,212,0.2)">
+          <div class="stat-label">Events Logged</div>
+          <div class="stat-value" id="anal-event-count" style="color:var(--analytics)">0</div>
+          <div class="stat-sub">This session</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Completion Rate</div>
+          <div class="stat-value stat-success" id="anal-rate">0%</div>
+          <div class="stat-sub">Tasks completed</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Auth Provider</div>
+          <div class="stat-value" id="anal-provider" style="font-size:1.1rem;padding-top:0.2rem">—</div>
+          <div class="stat-sub">Sign-in method</div>
+        </div>
+      </div>
+
+      <!-- Manual Event Tracking -->
+      <div class="card" style="margin-bottom:1rem;border-color:rgba(0,188,212,0.2)">
+        <div class="section-title" style="color:var(--analytics)">📊 Manual Event Tracking</div>
+        <div style="font-size:12px;color:var(--text3);margin-bottom:0.75rem">Fire custom analytics events to Firebase. Each event below mirrors production tracking calls (logEvent) used in your app.</div>
+        <div class="event-btns">
+          <button class="event-btn" onclick="trackEvent('button_click', {button_name:'cta_primary', screen:'dashboard'})">button_click</button>
+          <button class="event-btn" onclick="trackEvent('purchase', {item_id:'pro_plan', currency:'USD', value:9.99})">purchase</button>
+          <button class="event-btn" onclick="trackEvent('search', {search_term:'task management', results_count:14})">search</button>
+          <button class="event-btn" onclick="trackEvent('share', {method:'link', content_type:'task', item_id:'task_001'})">share</button>
+          <button class="event-btn" onclick="trackEvent('tutorial_complete', {achievement_id:'onboarding'})">tutorial_complete</button>
+          <button class="event-btn" onclick="trackEvent('level_up', {level:2, character:'user'})">level_up</button>
+          <button class="event-btn" onclick="trackEvent('login', {method:'google'})">login</button>
+          <button class="event-btn" onclick="trackEvent('sign_up', {method:'email'})">sign_up</button>
+          <button class="event-btn" onclick="trackEvent('add_to_cart', {item_id:'feature_x', quantity:1})">add_to_cart</button>
+          <button class="event-btn" onclick="trackEvent('notification_open', {notification_id:'push_001'})">notification_open</button>
+        </div>
+      </div>
+
+      <!-- User Properties -->
+      <div class="card" style="margin-bottom:1rem">
+        <div class="section-title">👤 User Properties (Analytics)</div>
+        <div style="font-size:12px;color:var(--text3);margin-bottom:0.5rem">User properties are attributes you set to describe segments. They persist across sessions.</div>
+        <div class="user-prop-grid" id="analytics-user-props"></div>
+        <div style="margin-top:0.75rem;display:flex;gap:0.5rem">
+          <button class="event-btn" onclick="setUserProperty('subscription_tier', 'pro')">Set tier=pro</button>
+          <button class="event-btn" onclick="setUserProperty('notification_enabled', 'true')">notif=true</button>
+          <button class="event-btn" onclick="setUserProperty('preferred_theme', 'dark')">theme=dark</button>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="card">
+          <div class="section-title">📋 Event Log (Live)</div>
+          <div class="analytics-event-log" id="analytics-event-log">
+            <div style="color:var(--text3);font-size:11px;padding:8px 0">Waiting for events…</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="section-title">Weekly Activity</div>
+          <div class="bar-chart" id="weekly-bars"></div>
+          <div class="bar-labels" id="weekly-labels"></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:1rem">
+        <div class="section-title">Firebase Services Status</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-top:0.75rem" id="service-status"></div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         CRASHLYTICS PAGE — Firebase Crashlytics (Crash reporting)
+         ═══════════════════════════════════════════════════════════ -->
+    <div class="page" id="page-crashlytics">
+      <!-- Status Panel -->
+      <div class="crash-panel">
+        <div class="section-title">
+          <span style="font-size:18px">🛡️</span> Firebase Crashlytics
+          <span class="fcm-status" style="margin-left:auto;font-size:12px">
+            <span class="status-dot active"></span>
+            <span style="color:var(--success)">Monitoring Active</span>
+          </span>
+        </div>
+        <div style="font-size:12px;color:var(--text3);margin:0.5rem 0 0.75rem">
+          Crashlytics captures uncaught errors, promise rejections, and manually reported exceptions. Each report includes a stack trace, device info, and custom metadata (keys/logs).
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem;margin-bottom:0.75rem">
+          <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:0.75rem;text-align:center">
+            <div style="font-size:1.5rem;font-weight:700;font-family:var(--font-head);color:var(--crashlytics)" id="crash-total">0</div>
+            <div style="font-size:11px;color:var(--text3)">Total Crashes</div>
+          </div>
+          <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:0.75rem;text-align:center">
+            <div style="font-size:1.5rem;font-weight:700;font-family:var(--font-head);color:var(--warning)" id="crash-handled">0</div>
+            <div style="font-size:11px;color:var(--text3)">Handled Errors</div>
+          </div>
+          <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:0.75rem;text-align:center">
+            <div style="font-size:1.5rem;font-weight:700;font-family:var(--font-head);color:var(--success)" id="crash-sessions">1</div>
+            <div style="font-size:11px;color:var(--text3)">Sessions</div>
+          </div>
+        </div>
+        <div class="crash-actions">
+          <button class="crash-btn primary" onclick="triggerTestCrash()">💥 Trigger Test Crash</button>
+          <button class="crash-btn" onclick="reportHandledException()">⚠️ Report Handled Error</button>
+          <button class="crash-btn" onclick="triggerPromiseRejection()">🔴 Unhandled Promise</button>
+          <button class="crash-btn" onclick="simulateNetworkError()">🌐 Network Error</button>
+          <button class="crash-btn" onclick="clearCrashLogs()">🗑️ Clear Logs</button>
+        </div>
+      </div>
+
+      <!-- Custom Keys & Logs -->
+      <div class="card" style="margin-bottom:1rem">
+        <div class="section-title">🔑 Crashlytics Custom Keys & Logs</div>
+        <div style="font-size:12px;color:var(--text3);margin-bottom:0.75rem">Custom keys add context to crash reports. Logs act as a breadcrumb trail — the last 64KB appear with each crash report.</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.75rem" id="crash-custom-keys"></div>
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+          <button class="crash-btn" onclick="setCrashKey('current_screen', 'dashboard')">key: current_screen</button>
+          <button class="crash-btn" onclick="setCrashKey('user_role', window._userRole||'member')">key: user_role</button>
+          <button class="crash-btn" onclick="setCrashKey('task_count', window._tasks?.length||0)">key: task_count</button>
+          <button class="crash-btn" onclick="addCrashLog('User navigated to task list')">log breadcrumb</button>
+        </div>
+      </div>
+
+      <!-- Crash Report List -->
+      <div class="card">
+        <div class="section-title">📋 Crash Reports</div>
+        <div id="crash-report-list" style="margin-top:0.75rem">
+          <div style="text-align:center;padding:2rem;color:var(--text3);font-size:13px">No crashes recorded. Click "Trigger Test Crash" to simulate one.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROFILE PAGE -->
+    <div class="page" id="page-profile">
+      <div class="profile-header">
+        <div class="profile-avatar" id="profile-avatar">?</div>
+        <div>
+          <div class="profile-name" id="profile-name">Loading...</div>
+          <div class="profile-email" id="profile-email">...</div>
+          <div class="profile-role" id="profile-role">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            member
+          </div>
+        </div>
+      </div>
+      <div class="two-col">
+        <div class="card">
+          <div class="section-title">Account Info</div>
+          <div style="display:flex;flex-direction:column;gap:0.6rem;margin-top:0.5rem">
+            <div style="display:flex;justify-content:space-between;font-size:13px;padding:0.5rem 0;border-bottom:1px solid var(--border)">
+              <span style="color:var(--text2)">UID</span>
+              <span style="font-size:11px;color:var(--text3);max-width:180px;overflow:hidden;text-overflow:ellipsis" id="prof-uid">—</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;padding:0.5rem 0;border-bottom:1px solid var(--border)">
+              <span style="color:var(--text2)">Sign-in Method</span>
+              <span id="prof-provider" style="color:var(--text)">—</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;padding:0.5rem 0;border-bottom:1px solid var(--border)">
+              <span style="color:var(--text2)">Role</span>
+              <span id="prof-role-val" style="color:var(--accent2)">—</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;padding:0.5rem 0">
+              <span style="color:var(--text2)">Email Verified</span>
+              <span id="prof-verified" style="color:var(--success)">—</span>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="section-title">JWT Token (Preview)</div>
+          <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:0.75rem;margin-top:0.5rem;font-family:monospace;font-size:10px;color:var(--text3);word-break:break-all;line-height:1.6;max-height:130px;overflow-y:auto" id="jwt-preview">Loading token...</div>
+          <button class="icon-btn" style="margin-top:0.75rem;width:100%;justify-content:center" onclick="copyToken()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+            Copy JWT Token
+          </button>
+        </div>
+      </div>
+      <div class="card" style="margin-top:1rem">
+        <div class="section-title" style="margin-bottom:0.75rem">Role-Based Access Control</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem" id="rbac-grid"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ADD TASK MODAL -->
+<div class="modal-overlay" id="add-task-modal">
+  <div class="modal">
+    <div class="modal-title">New Task</div>
+    <div class="form-group">
+      <label>Task Title</label>
+      <input type="text" id="task-title-input" placeholder="Describe the task..." style="width:100%;padding:0.65rem 0.9rem;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);font-family:var(--font-body);font-size:14px;outline:none"/>
+    </div>
+    <div class="modal-row">
+      <div class="form-group">
+        <label>Priority</label>
+        <select class="modal-select" id="task-priority">
+          <option value="high">🔴 High</option>
+          <option value="medium" selected>🟡 Medium</option>
+          <option value="low">🟢 Low</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Category</label>
+        <select class="modal-select" id="task-category">
+          <option value="dev">Development</option>
+          <option value="design">Design</option>
+          <option value="review">Review</option>
+          <option value="meeting">Meeting</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Due Date</label>
+      <input type="date" class="modal-select" id="task-due"/>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeAddTask()">Cancel</button>
+      <button class="btn-save" onclick="saveTask()">Save to Firestore →</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<!-- FIREBASE SERVICE WORKER for FCM Background Push -->
+<script>
+// FCM requires a service worker served from a REAL path (not a blob URL).
+// firebase-messaging-sw.js must be deployed alongside this HTML file.
+// This script writes the SW file content to localStorage so you can copy
+// it and deploy it as firebase-messaging-sw.js on your web server.
+
+window._swContent = `importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js');
+
+firebase.initializeApp({
+  apiKey: "AIzaSyCYOGr-LA8sIj2pcEB5Qst02flQHv94n14",
+  authDomain: "mbasminiproject.firebaseapp.com",
+  projectId: "mbasminiproject",
+  storageBucket: "mbasminiproject.firebasestorage.app",
+  messagingSenderId: "175921982193",
+  appId: "1:175921982193:web:4eee02578cc79f0439d750"
+});
+
+const messaging = firebase.messaging();
+
+messaging.onBackgroundMessage(function(payload) {
+  const { title, body, icon } = payload.notification || {};
+  self.registration.showNotification(title || 'TeamSync', {
+    body: body || 'You have a new notification',
+    icon: icon || '/favicon.ico',
+    badge: '/favicon.ico',
+    data: payload.data,
+    tag: 'teamsync-push',
+    requireInteraction: false,
+    actions: [
+      { action: 'open', title: 'Open App' },
+      { action: 'dismiss', title: 'Dismiss' }
+    ]
+  });
+});
+
+self.addEventListener('notificationclick', function(event) {
+  event.notification.close();
+  if (event.action === 'open' || !event.action) {
+    event.waitUntil(clients.openWindow('/'));
+  }
+});`;
+
+if ('serviceWorker' in navigator) {
+  // FCM REQUIRES the SW to be at a real URL path — blob URLs do NOT work for push.
+  // Try to register /firebase-messaging-sw.js (only works when hosted on a web server).
+  navigator.serviceWorker.register('/firebase-messaging-sw.js', { scope: '/' })
+    .then(reg => {
+      window._swRegistered = true;
+      console.log('[TeamSync] Service Worker registered at /firebase-messaging-sw.js');
+    })
+    .catch(err => {
+      window._swRegistered = false;
+      console.warn('[TeamSync] SW not found at /firebase-messaging-sw.js — FCM background push unavailable in this environment.', err.message);
+    });
+}
+</script>
+
+<!-- FIREBASE SDK (Modular) -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc, onSnapshot, query, orderBy, serverTimestamp, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { getMessaging, getToken, onMessage, deleteToken } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js";
+  import { getAnalytics, logEvent, setUserId, setUserProperties } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics.js";
+
+  // ─── FIREBASE CONFIG ───────────────────────────────────────────────
+  const firebaseConfig = {
+    apiKey: "AIzaSyCYOGr-LA8sIj2pcEB5Qst02flQHv94n14",
+    authDomain: "mbasminiproject.firebaseapp.com",
+    projectId: "mbasminiproject",
+    storageBucket: "mbasminiproject.firebasestorage.app",
+    messagingSenderId: "175921982193",
+    appId: "1:175921982193:web:4eee02578cc79f0439d750",
+    measurementId: "G-XC7YNJT999"
+  };
+
+  // VAPID key — generate in Firebase Console → Project Settings → Cloud Messaging → Web Push Certificates
+  // Replace with your own VAPID key for real push delivery
+  const VAPID_KEY = "BPweFnDJVBhzZE5W9AzkfAAocdaMuaFpH4IqmJIl_1BQ4QErWzt1tfs-58tZgVQ0SxpSStEfjDbu0NPkl4dzHQY";
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  const googleProvider = new GoogleAuthProvider();
+
+  // ─── FIREBASE ANALYTICS ────────────────────────────────────────────
+  let analytics;
+  try {
+    if (!firebaseConfig.measurementId) throw new Error('measurementId missing — enable Google Analytics in Firebase Console.');
+    analytics = getAnalytics(app);
+    window._analyticsReady = true;
+    // Fire app_open so it immediately appears in Firebase Console → Analytics → DebugView
+    logEvent(analytics, 'app_open', { platform: 'web', app_version: '1.0.0' });
+    console.log('[Analytics] Firebase Analytics initialized OK. measurementId:', firebaseConfig.measurementId);
+    console.log('[Analytics] Events appear in Firebase Console within 24hrs. For real-time: use DebugView or add ?analytics_debug_mode=1 to the URL.');
+  } catch(e) {
+    console.error('[Analytics] Init failed:', e.message);
+    window._analyticsReady = false;
+    window._analyticsError = e.message;
+  }
+
+  // ─── FIREBASE MESSAGING (FCM) ──────────────────────────────────────
+  let messaging;
+  try {
+    messaging = getMessaging(app);
+    window._messagingReady = true;
+    console.log('[FCM] Firebase Messaging initialized. To get a real token:');
+    console.log('[FCM] 1. Deploy this file + firebase-messaging-sw.js to HTTPS (e.g. Firebase Hosting)');
+    console.log('[FCM] 2. Get your VAPID key from Firebase Console → Project Settings → Cloud Messaging → Web Push certificates');
+    console.log('[FCM] 3. Replace VAPID_KEY below with your real key');
+  } catch(e) {
+    window._messagingReady = false;
+    console.warn('[FCM] Init failed:', e.message);
+  }
+
+  // ─── GLOBALS ───────────────────────────────────────────────────────
+  window._currentUser = null;
+  window._tasks = [];
+  window._msgs = {};
+  window._currentRoom = 'general';
+  window._msgCount = 0;
+  window._userRole = 'member';
+  window._fcmToken = null;
+  window._analyticsEvents = [];
+  window._analyticsUserProps = {};
+  window._crashReports = [];
+  window._crashCustomKeys = {};
+  window._crashLogs = [];
+  window._eventCount = 0;
+  let unsubTasks = null, unsubChat = null;
+
+  // ══════════════════════════════════════════════════════════════════
+  //  CRASHLYTICS — Client-side implementation
+  //  Firebase Crashlytics web SDK is currently in beta and limited.
+  //  This is the production-pattern implementation: capture errors,
+  //  enrich with metadata, store to Firestore, show in dashboard.
+  // ══════════════════════════════════════════════════════════════════
+
+  function initCrashlytics() {
+    // 1. Catch uncaught global errors (window.onerror)
+    window.onerror = function(message, source, lineno, colno, error) {
+      recordCrash({
+        type: 'uncaught_error',
+        message: message || 'Unknown error',
+        source: source || 'unknown',
+        line: lineno,
+        col: colno,
+        stack: error?.stack || 'No stack trace',
+        fatal: true
+      });
+      return false; // Let error propagate
+    };
+
+    // 2. Catch unhandled Promise rejections
+    window.addEventListener('unhandledrejection', function(event) {
+      const reason = event.reason;
+      recordCrash({
+        type: 'unhandled_promise_rejection',
+        message: reason?.message || String(reason) || 'Promise rejected',
+        stack: reason?.stack || 'No stack trace',
+        fatal: false
+      });
+    });
+
+    console.log('[Crashlytics] Global error handlers installed');
+  }
+
+  async function recordCrash(crashData) {
+    const report = {
+      ...crashData,
+      timestamp: new Date().toISOString(),
+      uid: window._currentUser?.uid || 'anonymous',
+      userName: window._currentUser?.displayName || 'Anonymous',
+      userRole: window._userRole || 'unknown',
+      sessionId: window._sessionId || 'session_' + Date.now(),
+      platform: navigator.userAgent,
+      appVersion: '1.0.0',
+      customKeys: { ...window._crashCustomKeys },
+      logs: [...window._crashLogs].slice(-20), // last 20 breadcrumbs
+      id: 'crash_' + Date.now() + '_' + Math.random().toString(36).slice(2,7)
+    };
+
+    window._crashReports.push(report);
+    window._crashLogs.push(`[${new Date().toLocaleTimeString()}] CRASH: ${report.message}`);
+
+    // Track crash as Analytics event
+    logAnalyticsEvent('app_exception', {
+      description: report.message.slice(0, 100),
+      fatal: report.fatal || false
+    });
+
+    // Persist crash report to Firestore.
+    // Visible in: Firebase Console → Firestore Database → crash_reports collection.
+    // Also logged to Analytics as 'app_exception' — visible in Firebase Console → Analytics → Events.
+    try {
+      const docRef = await addDoc(collection(db, 'crash_reports'), {
+        ...report,
+        createdAt: serverTimestamp()
+      });
+      console.log('[Crashlytics] Crash report written to Firestore: crash_reports/' + docRef.id);
+      console.log('[Crashlytics] View in Firebase Console → Firestore → crash_reports');
+    } catch(e) {
+      console.error('[Crashlytics] Firestore write FAILED. Check Firestore rules allow writes to crash_reports.', e.message);
+      console.error('[Crashlytics] Add this to Firestore Rules:\n  match /crash_reports/{doc} { allow create: if request.auth != null; }');
+    }
+
+    // Update UI
+    updateCrashlyticsUI();
+    updateCrashBadges();
+
+    toast(`⚠️ Crashlytics captured: ${report.message.slice(0, 50)}`, 'crash');
+    return report;
+  }
+
+  // Expose for global use
+  window.recordCrash = recordCrash;
+
+  window.setCrashKey = function(key, value) {
+    window._crashCustomKeys[key] = String(value);
+    toast(`🔑 Crashlytics key set: ${key} = ${value}`, 'info');
+    renderCrashCustomKeys();
+  };
+
+  window.addCrashLog = function(message) {
+    const log = `[${new Date().toLocaleTimeString()}] ${message}`;
+    window._crashLogs.push(log);
+    if (window._crashLogs.length > 64) window._crashLogs.shift();
+    toast(`📝 Crash log: "${message}"`, 'info');
+  };
+
+  window.triggerTestCrash = function() {
+    try {
+      // Intentional null dereference
+      const obj = null;
+      obj.nonExistentMethod(); // This will throw
+    } catch(e) {
+      recordCrash({
+        type: 'test_crash',
+        message: e.message,
+        stack: e.stack,
+        fatal: false,
+        source: 'manual_test'
+      });
+    }
+  };
+
+  window.reportHandledException = function() {
+    try {
+      JSON.parse('{ malformed json }}}');
+    } catch(e) {
+      recordCrash({
+        type: 'handled_exception',
+        message: `JSON Parse Error: ${e.message}`,
+        stack: e.stack,
+        fatal: false,
+        source: 'data_processing'
+      });
+    }
+  };
+
+  window.triggerPromiseRejection = function() {
+    // Creates an actual unhandled rejection that the global handler catches
+    const fakeAsyncOp = () => new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Simulated async failure: fetchUserData timeout after 5000ms')), 50);
+    });
+    fakeAsyncOp(); // intentionally not caught
+    toast('🔴 Unhandled promise rejection triggered', 'info');
+  };
+
+  window.simulateNetworkError = function() {
+    recordCrash({
+      type: 'network_error',
+      message: 'NetworkError: Failed to fetch https://api.teamsync.app/v2/tasks — ERR_CONNECTION_REFUSED',
+      stack: 'Error: Failed to fetch\n    at fetchTasks (tasks.js:142)\n    at async loadDashboard (dashboard.js:56)\n    at async App.mount (app.js:23)',
+      fatal: false,
+      source: 'network'
+    });
+  };
+
+  window.clearCrashLogs = function() {
+    window._crashReports = [];
+    window._crashLogs = [];
+    updateCrashlyticsUI();
+    updateCrashBadges();
+    toast('🗑️ Crash logs cleared', 'info');
+  };
+
+  function updateCrashlyticsUI() {
+    const total = window._crashReports.length;
+    const handled = window._crashReports.filter(r => !r.fatal).length;
+
+    const totalEl = document.getElementById('crash-total');
+    const handledEl = document.getElementById('crash-handled');
+    if (totalEl) totalEl.textContent = total;
+    if (handledEl) handledEl.textContent = handled;
+
+    const list = document.getElementById('crash-report-list');
+    if (!list) return;
+    if (!window._crashReports.length) {
+      list.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text3);font-size:13px">No crashes recorded. Click "Trigger Test Crash" to simulate one.</div>';
+      return;
+    }
+    list.innerHTML = [...window._crashReports].reverse().map(r => `
+      <div class="crash-report">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+          <span style="font-size:14px">${r.fatal ? '💥' : '⚠️'}</span>
+          <div class="crash-report-title">${r.message}</div>
+          <span style="margin-left:auto;font-size:10px;font-weight:600;padding:2px 6px;border-radius:3px;background:${r.fatal?'rgba(255,82,82,0.2)':'rgba(240,160,90,0.2)'};color:${r.fatal?'var(--crashlytics)':'var(--warning)'}">${r.fatal ? 'FATAL' : 'HANDLED'}</span>
+        </div>
+        <div class="crash-report-meta">
+          <span>🕐 ${new Date(r.timestamp).toLocaleTimeString()}</span>
+          <span>👤 ${r.userName}</span>
+          <span>🏷️ ${r.type}</span>
+          <span>🔑 Keys: ${Object.keys(r.customKeys||{}).length}</span>
+        </div>
+        <div class="crash-stack">${r.stack}</div>
+        ${r.customKeys && Object.keys(r.customKeys).length > 0 ? `
+        <div style="margin-top:6px;font-size:10px;color:var(--text3)">
+          <strong style="color:var(--text2)">Custom Keys:</strong> ${Object.entries(r.customKeys).map(([k,v])=>`${k}=${v}`).join(', ')}
+        </div>` : ''}
+      </div>`).join('');
+  }
+
+  function renderCrashCustomKeys() {
+    const el = document.getElementById('crash-custom-keys');
+    if (!el) return;
+    const keys = Object.entries(window._crashCustomKeys);
+    if (!keys.length) {
+      el.innerHTML = '<div style="color:var(--text3);font-size:12px;grid-column:1/-1">No custom keys set yet.</div>';
+      return;
+    }
+    el.innerHTML = keys.map(([k,v]) => `
+      <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:0.6rem 0.75rem">
+        <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px">${k}</div>
+        <div style="font-size:13px;font-weight:500;color:var(--crashlytics);margin-top:2px">${v}</div>
+      </div>`).join('');
+  }
+
+  function updateCrashBadges() {
+    const count = window._crashReports.length;
+    const badge = document.getElementById('crash-nav-badge');
+    if (badge) badge.textContent = count;
+    const dashCount = document.getElementById('dash-crash-count');
+    if (dashCount) dashCount.textContent = count;
+  }
+
+  // ══════════════════════════════════════════════════════════════════
+  //  FIREBASE ANALYTICS — Full implementation with logEvent
+  // ══════════════════════════════════════════════════════════════════
+
+  function logAnalyticsEvent(eventName, params = {}) {
+    const entry = {
+      name: eventName,
+      params,
+      timestamp: new Date().toLocaleTimeString(),
+      ts: Date.now()
+    };
+    window._analyticsEvents.unshift(entry);
+    if (window._analyticsEvents.length > 100) window._analyticsEvents.pop();
+    window._eventCount++;
+
+    // Fire to Firebase Analytics — real SDK call, shows in Firebase Console → Analytics → Events
+    // Custom events appear in DebugView immediately, in Events tab within 24hrs.
+    if (analytics && window._analyticsReady) {
+      try {
+        // Sanitize: Firebase Analytics event names must be alphanumeric + underscore, max 40 chars
+        const safeName = eventName.replace(/[^a-zA-Z0-9_]/g, '_').slice(0, 40);
+        logEvent(analytics, safeName, {
+          ...params,
+          app_version: '1.0.0',
+          user_role: window._userRole || 'member'
+        });
+        console.log('[Analytics] logEvent fired to Firebase:', safeName, params);
+      } catch(e) {
+        console.error('[Analytics] logEvent failed for "' + eventName + '":', e.message);
+      }
+    } else if (!window._analyticsReady) {
+      // Surface the setup error clearly
+      if (window._analyticsError) {
+        console.warn('[Analytics] Not sending "' + eventName + '" — Analytics init error:', window._analyticsError);
+      }
+    }
+
+    // Update UI
+    updateAnalyticsEventLog();
+
+    const countEl = document.getElementById('anal-event-count');
+    if (countEl) countEl.textContent = window._eventCount;
+    const dashCount = document.getElementById('dash-event-count');
+    if (dashCount) dashCount.textContent = window._eventCount;
+  }
+
+  // Expose globally
+  window.trackEvent = function(eventName, params = {}) {
+    logAnalyticsEvent(eventName, params);
+    toast(`📊 Analytics: ${eventName} fired`, 'info');
+  };
+
+  window.setUserProperty = function(key, value) {
+    window._analyticsUserProps[key] = value;
+    if (analytics && window._analyticsReady) {
+      try {
+        setUserProperties(analytics, { [key]: value });
+        console.log(`[Analytics] setUserProperties: ${key} = ${value}`);
+      } catch(e) {}
+    }
+    toast(`👤 User property: ${key} = ${value}`, 'info');
+    logAnalyticsEvent('user_property_set', { property: key, value });
+    renderAnalyticsUserProps();
+  };
+
+  function renderAnalyticsUserProps() {
+    const el = document.getElementById('analytics-user-props');
+    if (!el) return;
+    const props = Object.entries(window._analyticsUserProps);
+    if (!props.length) {
+      el.innerHTML = '<div style="color:var(--text3);font-size:12px;grid-column:1/-1">No user properties set yet.</div>';
+      return;
+    }
+    el.innerHTML = props.map(([k,v]) => `
+      <div class="user-prop-item">
+        <div class="user-prop-key">${k}</div>
+        <div class="user-prop-val" style="color:var(--analytics)">${v}</div>
+      </div>`).join('');
+  }
+
+  function updateAnalyticsStatusBanner() {
+    const banner = document.getElementById('analytics-status-banner');
+    if (!banner) return;
+    if (window._analyticsReady) {
+      banner.style.display = 'flex';
+      banner.style.background = 'rgba(0,188,212,0.08)';
+      banner.style.border = '1px solid rgba(0,188,212,0.25)';
+      banner.style.color = 'var(--analytics)';
+      banner.innerHTML = '<span style="font-size:16px">✅</span><div><strong>Firebase Analytics is active</strong> — events are being sent to Firebase.<br><span style="color:var(--text3)">View in real-time: <a href="https://console.firebase.google.com/project/mbasminiproject/analytics/app/web:NGVlZTAyNTc4Y2M3OWYwNDM5ZDc1MA==/debugview" target="_blank" style="color:var(--analytics)">Firebase Console → Analytics → DebugView</a> (add <code style="background:var(--surface3);padding:1px 4px;border-radius:3px">?analytics_debug_mode=1</code> to URL for real-time view). Events take up to 24hrs to appear in the Events tab.</span></div>';
+    } else {
+      banner.style.display = 'flex';
+      banner.style.background = 'rgba(232,93,74,0.08)';
+      banner.style.border = '1px solid rgba(232,93,74,0.25)';
+      banner.style.color = 'var(--danger)';
+      const errMsg = window._analyticsError || 'Unknown error';
+      banner.innerHTML = '<span style="font-size:16px">❌</span><div><strong>Firebase Analytics failed to initialize</strong><br><span style="color:var(--text3)">Error: ' + errMsg + '<br>Fix: Ensure Google Analytics is enabled in your Firebase project and <code style="background:var(--surface3);padding:1px 4px;border-radius:3px">measurementId</code> is in firebaseConfig.</span></div>';
+    }
+  }
+
+  function updateAnalyticsEventLog() {
+    const el = document.getElementById('analytics-event-log');
+    if (!el) return;
+    if (!window._analyticsEvents.length) {
+      el.innerHTML = '<div style="color:var(--text3);font-size:11px;padding:8px 0">Waiting for events…</div>';
+      return;
+    }
+    el.innerHTML = window._analyticsEvents.slice(0,20).map(e => `
+      <div class="event-log-item">
+        <span class="event-time">${e.timestamp}</span>
+        <span class="event-name">${e.name}</span>
+        <span class="event-params">${Object.keys(e.params).length ? JSON.stringify(e.params).slice(0,60) : ''}</span>
+      </div>`).join('');
+  }
+
+  // ══════════════════════════════════════════════════════════════════
+  //  FIREBASE CLOUD MESSAGING (FCM) — Full implementation
+  // ══════════════════════════════════════════════════════════════════
+
+  window.requestNotificationPermission = async function() {
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission === 'granted') {
+        toast('🔔 Notifications enabled!', 'success');
+        await initFCMToken();
+        document.getElementById('fcm-permission-banner').style.display = 'none';
+      } else {
+        toast('🔕 Notification permission denied', 'error');
+        setFCMStatus('denied', false);
+      }
+    } catch(e) {
+      console.warn('[FCM] Permission request failed:', e);
+    }
+  };
+
+  async function initFCMToken() {
+    if (!messaging) {
+      setFCMStatus('unavailable (no HTTPS)', false);
+      document.getElementById('fcm-token-display').textContent =
+        '⚠️ FCM requires HTTPS + /firebase-messaging-sw.js on the server.\n\nSteps to fix:\n1. Deploy to Firebase Hosting (firebase deploy)\n2. Place firebase-messaging-sw.js in your public/ folder\n3. Replace VAPID_KEY with your real key from:\n   Firebase Console → Project Settings → Cloud Messaging → Web Push certificates';
+      return;
+    }
+
+    // FCM needs /firebase-messaging-sw.js to be registered (not a blob URL)
+    let swReg;
+    try {
+      swReg = await navigator.serviceWorker.getRegistration('/');
+      if (!swReg) {
+        // Try waiting for any existing registration
+        swReg = await navigator.serviceWorker.ready;
+      }
+    } catch(e) {
+      swReg = null;
+    }
+
+    if (!swReg) {
+      setFCMStatus('no service worker', false);
+      document.getElementById('fcm-token-display').textContent =
+        '⚠️ No service worker registered at /firebase-messaging-sw.js.\n\nDeploy this app to Firebase Hosting and include firebase-messaging-sw.js in your public/ folder. See console for the file content.';
+      console.log('[FCM] firebase-messaging-sw.js content to deploy:\n' + (window._swContent || '(see source)'));
+      return;
+    }
+
+    try {
+      const token = await getToken(messaging, {
+        vapidKey: VAPID_KEY,
+        serviceWorkerRegistration: swReg
+      });
+
+      if (token) {
+        window._fcmToken = token;
+        document.getElementById('fcm-token-display').textContent = token;
+        setFCMStatus('active', true);
+        toast('🔔 FCM token generated!', 'fcm');
+        console.log('[FCM] Real token generated:', token);
+
+        // Save token to Firestore — visible in Firebase Console → Firestore → fcm_tokens
+        if (window._currentUser) {
+          try {
+            await setDoc(doc(db, 'fcm_tokens', window._currentUser.uid), {
+              token,
+              uid: window._currentUser.uid,
+              updatedAt: serverTimestamp(),
+              platform: 'web',
+              userAgent: navigator.userAgent.slice(0, 200)
+            });
+            console.log('[FCM] Token saved to Firestore collection: fcm_tokens /'+window._currentUser.uid);
+          } catch(e) {
+            console.error('[FCM] Firestore write failed. Check Firestore rules allow writes to fcm_tokens.', e.message);
+            toast('FCM token generated but Firestore write failed — check rules', 'error');
+          }
+        }
+
+        logAnalyticsEvent('fcm_token_generated', { platform: 'web' });
+
+        // Listen for foreground messages (real FCM push from your backend)
+        onMessage(messaging, (payload) => {
+          console.log('[FCM] Foreground message received:', payload);
+          const { title, body } = payload.notification || {};
+          addFCMMessageToLog({
+            title: title || 'TeamSync Push',
+            body: body || 'New notification',
+            data: payload.data,
+            direction: 'received',
+            timestamp: new Date().toISOString()
+          });
+
+          if (Notification.permission === 'granted') {
+            new Notification(title || 'TeamSync', {
+              body: body || 'New notification',
+              icon: '/favicon.ico',
+              tag: 'teamsync-fg'
+            });
+          }
+
+          addToNotificationPage({ title, body });
+          document.getElementById('notif-badge').textContent =
+            parseInt(document.getElementById('notif-badge').textContent || 0) + 1;
+
+          logAnalyticsEvent('notification_received', { title, source: 'fcm_foreground' });
+          toast('📲 Push: ' + title, 'fcm');
+        });
+
+      } else {
+        setFCMStatus('no token — check VAPID key', false);
+        document.getElementById('fcm-token-display').textContent =
+          '⚠️ Token not returned. Verify your VAPID key matches the one in:\nFirebase Console → Project Settings → Cloud Messaging → Web Push certificates\n\nCurrent VAPID_KEY starts with: ' + VAPID_KEY.slice(0, 20) + '...';
+      }
+    } catch(err) {
+      console.error('[FCM] getToken failed:', err.code, err.message);
+      let hint = '';
+      if (err.code === 'messaging/failed-service-worker-registration') {
+        hint = '\n\nFix: Ensure /firebase-messaging-sw.js exists and is served with Content-Type: application/javascript';
+      } else if (err.code === 'messaging/permission-blocked') {
+        hint = '\n\nFix: Go to browser site settings and allow notifications for this domain.';
+      } else if (err.code === 'messaging/invalid-vapid-key' || err.message.includes('VAPID')) {
+        hint = '\n\nFix: Replace VAPID_KEY with the real key from Firebase Console → Project Settings → Cloud Messaging → Web Push certificates.';
+      } else if (location.protocol === 'file:') {
+        hint = '\n\nFix: FCM does not work on file:// URLs. Host on HTTPS (try: npx serve . or Firebase Hosting).';
+      }
+      setFCMStatus('error: ' + (err.code || 'unknown'), false);
+      document.getElementById('fcm-token-display').textContent = '❌ FCM Error: ' + err.message + hint;
+      logAnalyticsEvent('fcm_token_error', { error: err.code || err.message });
+    }
+  }
+
+  function generateDemoToken() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+    return Array.from({length: 163}, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+  }
+
+  function setFCMStatus(text, active) {
+    const dot = document.getElementById('fcm-status-dot');
+    const txt = document.getElementById('fcm-status-text');
+    const navDot = document.getElementById('fcm-nav-dot');
+    const dashDot = document.getElementById('dash-fcm-dot');
+    const dashTxt = document.getElementById('dash-fcm-txt');
+
+    if (dot) { dot.style.background = active ? 'var(--success)' : 'var(--warning)'; dot.className = 'status-dot ' + (active ? 'active' : 'pending'); }
+    if (txt) { txt.textContent = text; txt.style.color = active ? 'var(--success)' : 'var(--text2)'; }
+    if (navDot) navDot.style.background = active ? 'var(--success)' : 'var(--warning)';
+    if (dashDot) { dashDot.style.background = active ? 'var(--success)' : 'var(--warning)'; dashDot.className = 'status-dot ' + (active ? 'active' : 'pending'); }
+    if (dashTxt) { dashTxt.textContent = active ? 'Connected' : text; dashTxt.style.color = active ? 'var(--success)' : 'var(--text2)'; }
+  }
+
+  window.copyFCMToken = function() {
+    if (window._fcmToken) {
+      navigator.clipboard.writeText(window._fcmToken).then(() => toast('📋 FCM token copied!', 'success'));
+    } else {
+      toast('No token available yet', 'error');
+    }
+  };
+
+  // Download the firebase-messaging-sw.js file the user needs to deploy
+  window.downloadSWFile = function() {
+    const blob = new Blob([window._swContent || '// SW content not found'], { type: 'application/javascript' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'firebase-messaging-sw.js';
+    a.click();
+    toast('⬇ firebase-messaging-sw.js downloaded — place it in your public/ root', 'info');
+  };
+
+  // Check and display FCM requirements status
+  function checkFCMRequirements() {
+    const isHttps = location.protocol === 'https:' || location.hostname === 'localhost';
+    const el1 = document.getElementById('fcm-req-1-icon');
+    const el2 = document.getElementById('fcm-req-2-icon');
+    const el3 = document.getElementById('fcm-req-3-icon');
+    if (el1) {
+      el1.textContent = isHttps ? '✓' : '✗';
+      el1.style.color = isHttps ? 'var(--success)' : 'var(--danger)';
+    }
+    if (el2) {
+      const swOk = window._swRegistered === true;
+      el2.textContent = swOk ? '✓' : '✗';
+      el2.style.color = swOk ? 'var(--success)' : 'var(--danger)';
+    }
+    // VAPID key check: the placeholder key is a known-bad key; real ones from Firebase Console are unique
+    const vapidLooksReal = VAPID_KEY && VAPID_KEY.length > 60 && !VAPID_KEY.startsWith('BEl62iUYgUivxIkv69yViEuiBIa');
+    if (el3) {
+      el3.textContent = vapidLooksReal ? '✓' : '✗';
+      el3.style.color = vapidLooksReal ? 'var(--success)' : 'var(--danger)';
+    }
+  }
+
+  window.refreshFCMToken = async function() {
+    toast('🔄 Refreshing FCM token…', 'info');
+    if (messaging) {
+      try {
+        const swReg = await navigator.serviceWorker.ready;
+        await deleteToken(messaging);
+        await initFCMToken();
+        toast('🔔 FCM token refreshed!', 'fcm');
+        logAnalyticsEvent('fcm_token_refreshed', {});
+      } catch(e) {
+        toast('Refresh failed: ' + e.message, 'error');
+      }
+    } else {
+      // Demo: just generate new demo token
+      const token = generateDemoToken();
+      window._fcmToken = token;
+      document.getElementById('fcm-token-display').textContent = `[DEMO REFRESHED]\n${token}`;
+      toast('🔄 Demo token refreshed', 'fcm');
+    }
+  };
+
+  window.sendLocalFCMDemo = function() {
+    const msg = {
+      title: '🔔 TeamSync Alert',
+      body: `Hey ${window._currentUser?.displayName || 'User'}! You have 3 unread tasks due today.`,
+      data: { type: 'task_reminder', count: '3' },
+      direction: 'received',
+      timestamp: new Date().toISOString()
+    };
+
+    addFCMMessageToLog(msg);
+
+    // Show actual browser notification if permitted
+    if (Notification.permission === 'granted') {
+      new Notification(msg.title, { body: msg.body, icon: '/favicon.ico' });
+    } else if (Notification.permission === 'default') {
+      Notification.requestPermission().then(p => {
+        if (p === 'granted') new Notification(msg.title, { body: msg.body });
+      });
+    }
+
+    addToNotificationPage(msg);
+    document.getElementById('notif-badge').textContent =
+      parseInt(document.getElementById('notif-badge').textContent || 0) + 1;
+
+    logAnalyticsEvent('notification_received', { title: msg.title, source: 'local_demo' });
+    toast('🚀 Push notification sent!', 'fcm');
+  };
+
+  window.simulateServerPush = function() {
+    // Simulates what a Firebase Admin SDK server-side push would deliver
+    const payloads = [
+      { title: '👤 Mention Alert', body: 'Alex mentioned you in #general: "@you can you check this PR?"', type: 'mention' },
+      { title: '✅ Task Completed', body: 'Priya completed "Design System Audit" — 2 tasks remain', type: 'task' },
+      { title: '🚀 Deploy Success', body: 'TeamSync v2.1.0 deployed to production successfully', type: 'deploy' },
+      { title: '⚠️ High Priority Task', body: 'URGENT: "Fix auth regression" assigned to you (due today)', type: 'alert' }
+    ];
+
+    const payload = payloads[Math.floor(Math.random() * payloads.length)];
+    const msg = { ...payload, direction: 'received', timestamp: new Date().toISOString(), source: 'server_simulated' };
+
+    addFCMMessageToLog(msg);
+    if (Notification.permission === 'granted') {
+      new Notification(payload.title, { body: payload.body, icon: '/favicon.ico', tag: 'server-push' });
+    }
+
+    addToNotificationPage(payload);
+    document.getElementById('notif-badge').textContent =
+      parseInt(document.getElementById('notif-badge').textContent || 0) + 1;
+    logAnalyticsEvent('notification_received', { title: payload.title, source: 'server_simulated' });
+    toast(`☁️ Server push: ${payload.title}`, 'fcm');
+  };
+
+  window.sendComposedPush = function() {
+    const title = document.getElementById('push-title')?.value || 'TeamSync';
+    const body = document.getElementById('push-body')?.value || 'Test notification';
+    const category = document.getElementById('push-category')?.value || 'task';
+
+    const msg = { title, body, data: { category, source: 'composer' }, direction: 'sent', timestamp: new Date().toISOString() };
+    addFCMMessageToLog(msg);
+
+    if (Notification.permission === 'granted') {
+      new Notification(title, { body, icon: '/favicon.ico' });
+    } else {
+      Notification.requestPermission().then(p => { if (p === 'granted') new Notification(title, { body }); });
+    }
+
+    addToNotificationPage({ title, body });
+    document.getElementById('notif-badge').textContent =
+      parseInt(document.getElementById('notif-badge').textContent || 0) + 1;
+    logAnalyticsEvent('notification_sent', { title, category, source: 'composer' });
+    toast(`📤 Push sent: "${title}"`, 'fcm');
+  };
+
+  function updateFCMPayloadPreview() {
+    const el = document.getElementById('fcm-payload-preview');
+    if (!el) return;
+    const title = document.getElementById('push-title')?.value || 'TeamSync Alert';
+    const body = document.getElementById('push-body')?.value || 'Notification body';
+    const token = window._fcmToken ? window._fcmToken.slice(0, 20) + '…' : '<YOUR_FCM_TOKEN>';
+    const payload = {
+      message: {
+        token,
+        notification: { title, body },
+        webpush: {
+          headers: { Urgency: 'high' },
+          notification: { icon: '/icons/icon-192.png', badge: '/icons/badge.png', tag: 'teamsync-push', requireInteraction: false }
+        },
+        data: { click_action: '/', category: document.getElementById('push-category')?.value || 'task' }
+      }
+    };
+    el.textContent = JSON.stringify(payload, null, 2);
+  }
+
+  function addFCMMessageToLog(msg) {
+    const log = document.getElementById('fcm-message-log');
+    if (!log) return;
+    const existing = log.querySelector('[data-empty]');
+    if (existing) existing.remove();
+
+    const el = document.createElement('div');
+    el.style.cssText = `background:var(--surface2);border-radius:var(--radius-sm);padding:0.75rem;border-left:3px solid ${msg.direction==='sent'?'var(--accent)':'var(--fcm)'}`;
+    el.innerHTML = `
+      <div style="display:flex;align-items:flex-start;gap:8px">
+        <span style="font-size:16px">${msg.direction==='sent'?'📤':'📲'}</span>
+        <div style="flex:1">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">
+            <strong style="font-size:13px;color:var(--text)">${msg.title}</strong>
+            <span style="font-size:10px;font-weight:600;padding:1px 5px;border-radius:3px;background:${msg.direction==='sent'?'rgba(124,110,230,0.2)':'rgba(255,109,0,0.2)'};color:${msg.direction==='sent'?'var(--accent2)':'var(--fcm)'}">${msg.direction === 'sent' ? 'SENT' : 'RECEIVED'}</span>
+          </div>
+          <div style="font-size:12px;color:var(--text2)">${msg.body}</div>
+          ${msg.data ? `<div style="font-size:10px;color:var(--text3);margin-top:3px;font-family:monospace">${JSON.stringify(msg.data)}</div>` : ''}
+          <div style="font-size:10px;color:var(--text3);margin-top:3px">${new Date(msg.timestamp).toLocaleTimeString()}</div>
+        </div>
+      </div>`;
+    log.insertBefore(el, log.firstChild);
+  }
+
+  function addToNotificationPage(msg) {
+    const el = document.getElementById('notif-list');
+    if (!el) return;
+    const div = document.createElement('div');
+    div.className = 'notif-card unread';
+    div.innerHTML = `
+      <div class="notif-icon" style="background:rgba(255,109,0,0.1);font-size:18px">🔔</div>
+      <div class="notif-content">
+        <div class="notif-title">${msg.title}</div>
+        <div class="notif-body">${msg.body}</div>
+        <div class="notif-time">Just now · via FCM Push</div>
+      </div>`;
+    el.insertBefore(div, el.firstChild);
+  }
+
+  // Wire up payload preview inputs
+  ['push-title', 'push-body', 'push-category'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', updateFCMPayloadPreview);
+  });
+
+  // ─── UTILS ────────────────────────────────────────────────────────
+  window.toast = (msg, type='info') => {
+    const el = document.createElement('div');
+    el.className = `toast ${type}`;
+    el.textContent = msg;
+    document.getElementById('toast-container').appendChild(el);
+    setTimeout(() => el.remove(), 3500);
+  };
+
+  // ─── AUTH TABS ───────────────────────────────────────────────────
+  window.switchAuthTab = (tab) => {
+    document.querySelectorAll('.auth-tab').forEach((t,i) => t.classList.toggle('active', (i===0&&tab==='login')||(i===1&&tab==='register')));
+    document.getElementById('login-form').style.display = tab==='login' ? 'block' : 'none';
+    document.getElementById('register-form').style.display = tab==='register' ? 'block' : 'none';
+    document.getElementById('auth-error').style.display = 'none';
+  };
+
+  const showAuthError = (msg) => {
+    const el = document.getElementById('auth-error');
+    el.textContent = msg;
+    el.style.display = 'block';
+  };
+
+  // ─── REGISTER ───────────────────────────────────────────────────
+  window.handleRegister = async () => {
+    const name = document.getElementById('reg-name').value.trim();
+    const email = document.getElementById('reg-email').value.trim();
+    const pass = document.getElementById('reg-pass').value;
+    const role = document.getElementById('reg-role').value;
+    if (!name || !email || !pass) return showAuthError('Please fill all fields.');
+    try {
+      const cred = await createUserWithEmailAndPassword(auth, email, pass);
+      await updateProfile(cred.user, { displayName: name });
+      await setDoc(doc(db, 'users', cred.user.uid), { name, email, role, provider: 'email', createdAt: serverTimestamp() });
+      logAnalyticsEvent('sign_up', { method: 'email', role });
+      toast('Account created! Welcome to TeamSync 🎉', 'success');
+    } catch(e) { showAuthError(e.message); }
+  };
+
+  // ─── LOGIN ──────────────────────────────────────────────────────
+  window.handleLogin = async () => {
+    const email = document.getElementById('login-email').value.trim();
+    const pass = document.getElementById('login-pass').value;
+    if (!email || !pass) return showAuthError('Enter email and password.');
+    try {
+      await signInWithEmailAndPassword(auth, email, pass);
+      logAnalyticsEvent('login', { method: 'email' });
+      toast('Welcome back!', 'success');
+    } catch(e) { showAuthError(e.message); }
+  };
+
+  // ─── GOOGLE SIGN-IN ─────────────────────────────────────────────
+  window.handleGoogleSignIn = async () => {
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const user = result.user;
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      if (!userDoc.exists()) {
+        await setDoc(doc(db, 'users', user.uid), { name: user.displayName, email: user.email, role: 'member', provider: 'google', createdAt: serverTimestamp() });
+        logAnalyticsEvent('sign_up', { method: 'google' });
+      } else {
+        logAnalyticsEvent('login', { method: 'google' });
+      }
+      toast(`Signed in as ${user.displayName}`, 'success');
+    } catch(e) { showAuthError(e.message); }
+  };
+
+  // ─── LOGOUT ─────────────────────────────────────────────────────
+  window.handleLogout = async () => {
+    if (unsubTasks) unsubTasks();
+    if (unsubChat) unsubChat();
+    logAnalyticsEvent('logout', {});
+    await signOut(auth);
+    toast('Signed out.', 'info');
+  };
+
+  // ─── AUTH STATE ─────────────────────────────────────────────────
+  window._sessionId = 'session_' + Date.now();
+
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      window._currentUser = user;
+      document.getElementById('auth-screen').style.display = 'none';
+      document.getElementById('app').style.display = 'flex';
+
+      // Set Analytics user identity
+      if (analytics && window._analyticsReady) {
+        try {
+          setUserId(analytics, user.uid);
+          setUserProperties(analytics, {
+            user_role: window._userRole,
+            auth_provider: user.providerData[0]?.providerId === 'google.com' ? 'google' : 'email',
+            email_verified: String(user.emailVerified)
+          });
+        } catch(e) {}
+      }
+
+      // Crashlytics: set user identity
+      window._crashCustomKeys['user_id'] = user.uid;
+      window._crashCustomKeys['user_email'] = user.email || 'unknown';
+      window._crashCustomKeys['auth_provider'] = user.providerData[0]?.providerId || 'email';
+
+      try {
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        if (userDoc.exists()) window._userRole = userDoc.data().role || 'member';
+      } catch(e) {}
+
+      updateUserUI(user);
+      subscribeToTasks();
+      subscribeToChat('general');
+      loadNotifications();
+
+      // Initialize FCM after auth
+      setTimeout(async () => {
+        if ('Notification' in window) {
+          if (Notification.permission === 'default') {
+            document.getElementById('fcm-permission-banner').style.display = 'flex';
+            setFCMStatus('permission needed', false);
+          } else if (Notification.permission === 'granted') {
+            await initFCMToken();
+          } else {
+            setFCMStatus('permission denied', false);
+            document.getElementById('fcm-token-display').textContent = '⚠️ Notification permission was denied. Enable in browser settings to receive push notifications.';
+          }
+        }
+        updateFCMPayloadPreview();
+        checkFCMRequirements();
+        renderCrashCustomKeys();
+        renderAnalyticsUserProps();
+      }, 800);
+
+      logAnalyticsEvent('session_start', {
+        session_id: window._sessionId,
+        user_role: window._userRole
+      });
+
+    } else {
+      window._currentUser = null;
+      document.getElementById('auth-screen').style.display = 'flex';
+      document.getElementById('app').style.display = 'none';
+    }
+  });
+
+  // Install Crashlytics after a short delay (to let app boot first)
+  setTimeout(initCrashlytics, 500);
+
+  function updateUserUI(user) {
+    const name = user.displayName || user.email.split('@')[0];
+    const initials = name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+
+    const sideAvatar = document.getElementById('sidebar-avatar');
+    if (user.photoURL) sideAvatar.innerHTML = `<img src="${user.photoURL}" alt="avatar"/>`;
+    else sideAvatar.textContent = initials;
+    document.getElementById('sidebar-name').textContent = name;
+    document.getElementById('sidebar-role').textContent = window._userRole;
+
+    const profAvatar = document.getElementById('profile-avatar');
+    if (user.photoURL) profAvatar.innerHTML = `<img src="${user.photoURL}"/>`;
+    else profAvatar.textContent = initials;
+    document.getElementById('profile-name').textContent = name;
+    document.getElementById('profile-email').textContent = user.email;
+    document.getElementById('profile-role').innerHTML = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> ${window._userRole}`;
+    document.getElementById('prof-uid').textContent = user.uid;
+    const provider = user.providerData[0]?.providerId === 'google.com' ? 'Google OAuth' : 'Email/Password';
+    document.getElementById('prof-provider').textContent = provider;
+    document.getElementById('prof-role-val').textContent = window._userRole;
+    document.getElementById('prof-verified').textContent = user.emailVerified ? '✓ Verified' : '✗ Not verified';
+    document.getElementById('anal-provider').textContent = provider;
+
+    user.getIdToken().then(token => {
+      const preview = token.split('.').map((p,i) => {
+        if (i===2) return p.slice(0,20)+'…';
+        try { return JSON.stringify(JSON.parse(atob(p.replace(/-/g,'+').replace(/_/g,'/'))), null, 2); } catch { return p; }
+      }).join('\n.\n');
+      document.getElementById('jwt-preview').textContent = preview;
+      window._jwtToken = token;
+    });
+
+    // Set analytics user props
+    window._analyticsUserProps = {
+      user_role: window._userRole,
+      auth_provider: provider,
+      email_verified: String(user.emailVerified)
+    };
+    renderAnalyticsUserProps();
+    renderRBAC();
+    renderServiceStatus();
+    renderWeeklyBars();
+  }
+
+  // ─── TASKS ──────────────────────────────────────────────────────
+  window.openAddTask = () => {
+    document.getElementById('add-task-modal').classList.add('open');
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('task-due').value = today;
+    logAnalyticsEvent('screen_view', { screen_name: 'add_task_modal' });
+  };
+  window.closeAddTask = () => document.getElementById('add-task-modal').classList.remove('open');
+
+  window.saveTask = async () => {
+    const title = document.getElementById('task-title-input').value.trim();
+    if (!title) return toast('Please enter a task title.', 'error');
+    const priority = document.getElementById('task-priority').value;
+    try {
+      await addDoc(collection(db, 'tasks'), {
+        title,
+        priority,
+        category: document.getElementById('task-category').value,
+        due: document.getElementById('task-due').value,
+        done: false,
+        uid: window._currentUser.uid,
+        userName: window._currentUser.displayName || window._currentUser.email,
+        createdAt: serverTimestamp()
+      });
+      document.getElementById('task-title-input').value = '';
+      closeAddTask();
+      logAnalyticsEvent('task_created', { priority, title: title.slice(0,30) });
+      toast('Task saved to Firestore ✓', 'success');
+    } catch(e) {
+      recordCrash({ type: 'firestore_error', message: e.message, stack: e.stack, fatal: false });
+      toast('Error: ' + e.message, 'error');
+    }
+  };
+
+  window.toggleTask = async (id, current) => {
+    try {
+      await updateDoc(doc(db, 'tasks', id), { done: !current });
+      logAnalyticsEvent('task_toggled', { done: !current });
+    } catch(e) {
+      recordCrash({ type: 'firestore_error', message: e.message, stack: e.stack, fatal: false });
+      toast('Update failed', 'error');
+    }
+  };
+
+  window.deleteTask = async (id) => {
+    try {
+      await deleteDoc(doc(db, 'tasks', id));
+      logAnalyticsEvent('task_deleted', {});
+      toast('Task deleted.', 'info');
+    } catch(e) { toast('Delete failed', 'error'); }
+  };
+
+  function subscribeToTasks() {
+    const q = query(collection(db, 'tasks'), orderBy('createdAt', 'desc'));
+    unsubTasks = onSnapshot(q, (snap) => {
+      window._tasks = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderTasks(window._tasks);
+      renderDashboard();
+    });
+  }
+
+  window.filterTasks = (filter, btn) => {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    let filtered = window._tasks;
+    if (filter === 'pending') filtered = window._tasks.filter(t => !t.done);
+    else if (filter === 'done') filtered = window._tasks.filter(t => t.done);
+    else if (filter === 'high') filtered = window._tasks.filter(t => t.priority === 'high');
+    logAnalyticsEvent('task_filter_applied', { filter });
+    renderTaskList(filtered, 'task-list-full', true);
+  };
+
+  function taskHTML(t, full=false) {
+    const prioTag = `<span class="tag tag-${t.priority}">${t.priority}</span>`;
+    const catTag = t.category === 'dev' ? `<span class="tag tag-dev">Dev</span>` : `<span class="tag tag-design">${t.category}</span>`;
+    const checkClass = t.done ? 'checked' : '';
+    const doneClass = t.done ? 'done' : '';
+    const del = full ? `<button class="task-delete" onclick="deleteTask('${t.id}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg></button>` : '';
+    return `<div class="task-item ${doneClass}">
+      <div class="task-check ${checkClass}" onclick="toggleTask('${t.id}', ${t.done})"></div>
+      <div class="task-body">
+        <div class="task-title">${t.title}</div>
+        <div class="task-meta">${prioTag}${catTag}<span class="task-date">${t.due || ''}</span></div>
+      </div>
+      ${del}
+    </div>`;
+  }
+
+  function renderTasks(tasks) {
+    renderTaskList(tasks.slice(0,5), 'dashboard-tasks', false);
+    renderTaskList(tasks, 'task-list-full', true);
+    document.getElementById('task-badge').textContent = tasks.filter(t=>!t.done).length;
+  }
+
+  function renderTaskList(tasks, containerId, full) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    if (!tasks.length) { el.innerHTML = `<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg><p>No tasks yet</p></div>`; return; }
+    el.innerHTML = tasks.map(t => taskHTML(t, full)).join('');
+  }
+
+  function renderDashboard() {
+    const t = window._tasks;
+    const done = t.filter(x=>x.done).length;
+    const pending = t.filter(x=>!x.done).length;
+    const high = t.filter(x=>x.priority==='high'&&!x.done).length;
+    document.getElementById('stat-total').textContent = t.length;
+    document.getElementById('stat-done').textContent = done;
+    document.getElementById('stat-pending').textContent = pending;
+    document.getElementById('stat-high').textContent = high;
+    const rate = t.length ? Math.round(done/t.length*100) : 0;
+    document.getElementById('anal-rate').textContent = rate + '%';
+
+    const pc = document.getElementById('priority-chart');
+    if(pc) {
+      const priorities = [{label:'High',count:t.filter(x=>x.priority==='high').length,color:'var(--danger)'},{label:'Medium',count:t.filter(x=>x.priority==='medium').length,color:'var(--warning)'},{label:'Low',count:t.filter(x=>x.priority==='low').length,color:'var(--success)'}];
+      pc.innerHTML = priorities.map(p=>`<div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.6rem"><span style="font-size:12px;color:var(--text2);width:55px">${p.label}</span><div style="flex:1;height:8px;background:var(--surface3);border-radius:4px;overflow:hidden"><div style="height:100%;width:${t.length?p.count/t.length*100:0}%;background:${p.color};border-radius:4px"></div></div><span style="font-size:12px;color:var(--text3);width:20px;text-align:right">${p.count}</span></div>`).join('');
+    }
+
+    const af = document.getElementById('activity-feed');
+    if(af) {
+      const recent = t.slice(0,4);
+      af.innerHTML = recent.length ? recent.map(task=>`<div style="display:flex;align-items:center;gap:8px;font-size:12px"><div style="width:6px;height:6px;border-radius:50%;background:${task.done?'var(--success)':'var(--warning)'}"></div><span style="color:var(--text2)">${task.userName||'User'}</span><span style="color:var(--text3)">${task.done?'completed':'added'}</span><span style="color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1">${task.title}</span></div>`).join('') : '<div style="color:var(--text3);font-size:12px">No recent activity</div>';
+    }
+  }
+
+  // ─── CHAT ───────────────────────────────────────────────────────
+  window.switchRoom = (room, el) => {
+    document.querySelectorAll('.chat-room-item').forEach(r=>r.classList.remove('active'));
+    el.classList.add('active');
+    window._currentRoom = room;
+    document.getElementById('chat-room-name').textContent = '#' + room;
+    document.getElementById('chat-input').placeholder = `Message #${room}...`;
+    if (unsubChat) unsubChat();
+    subscribeToChat(room);
+    logAnalyticsEvent('screen_view', { screen_name: 'chat_' + room });
+  };
+
+  function subscribeToChat(room) {
+    const q = query(collection(db, `chat_${room}`), orderBy('createdAt', 'asc'));
+    unsubChat = onSnapshot(q, (snap) => {
+      window._msgs[room] = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderChat();
+    });
+  }
+
+  window.handleChatKey = (e) => { if (e.key === 'Enter') sendMessage(); };
+
+  window.sendMessage = async () => {
+    const input = document.getElementById('chat-input');
+    const text = input.value.trim();
+    if (!text) return;
+    const user = window._currentUser;
+    try {
+      await addDoc(collection(db, `chat_${window._currentRoom}`), {
+        text, uid: user.uid,
+        userName: user.displayName || user.email.split('@')[0],
+        photoURL: user.photoURL || null,
+        createdAt: serverTimestamp()
+      });
+      input.value = '';
+      window._msgCount++;
+      logAnalyticsEvent('message_sent', { room: window._currentRoom });
+    } catch(e) {
+      recordCrash({ type: 'firestore_error', message: e.message, stack: e.stack, fatal: false });
+      toast('Send failed: ' + e.message, 'error');
+    }
+  };
+
+  function renderChat() {
+    const msgs = window._msgs[window._currentRoom] || [];
+    const container = document.getElementById('chat-messages');
+    if (!msgs.length) { container.innerHTML = `<div class="empty-state"><p>No messages yet. Say hello!</p></div>`; return; }
+    container.innerHTML = msgs.map(m => {
+      const own = m.uid === window._currentUser?.uid;
+      const initials = (m.userName||'U').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+      const avatar = m.photoURL ? `<img src="${m.photoURL}" style="width:100%;height:100%;object-fit:cover"/>` : initials;
+      const ts = m.createdAt?.toDate ? m.createdAt.toDate().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : 'now';
+      return `<div class="msg ${own?'own':''}">
+        <div class="msg-avatar">${avatar}</div>
+        <div class="msg-content">
+          <div class="msg-name">${m.userName}</div>
+          <div class="msg-bubble">${m.text}</div>
+          <div class="msg-time">${ts}</div>
+        </div>
+      </div>`;
+    }).join('');
+    container.scrollTop = container.scrollHeight;
+  }
+
+  // ─── NOTIFICATIONS ──────────────────────────────────────────────
+  function loadNotifications() {
+    const notifs = [
+      { title: 'New task assigned', body: 'You have been assigned "Finalize UI mockups"', time: '2 min ago', icon: '📋', unread: true },
+      { title: 'Task completed', body: 'Alex completed "Set up Firebase Auth"', time: '15 min ago', icon: '✅', unread: true },
+      { title: 'Team mention', body: 'Priya mentioned you in #general', time: '1 hr ago', icon: '💬', unread: true },
+      { title: 'Deployment successful', body: 'TeamSync v1.2 deployed to production', time: '3 hrs ago', icon: '🚀', unread: false },
+    ];
+    const el = document.getElementById('notif-list');
+    el.innerHTML = notifs.map(n => `
+      <div class="notif-card ${n.unread?'unread':''}">
+        <div class="notif-icon" style="background:var(--surface3);font-size:18px">${n.icon}</div>
+        <div class="notif-content">
+          <div class="notif-title">${n.title}</div>
+          <div class="notif-body">${n.body}</div>
+          <div class="notif-time">${n.time}</div>
+        </div>
+      </div>`).join('');
+  }
+
+  // ─── RBAC ───────────────────────────────────────────────────────
+  function renderRBAC() {
+    const role = window._userRole;
+    const perms = [
+      { label: 'View Tasks', admin: true, member: true },
+      { label: 'Create Tasks', admin: true, member: true },
+      { label: 'Delete Any Task', admin: true, member: false },
+      { label: 'Send Messages', admin: true, member: true },
+      { label: 'Manage Users', admin: true, member: false },
+      { label: 'View Analytics', admin: true, member: true },
+    ];
+    document.getElementById('rbac-grid').innerHTML = perms.map(p => {
+      const has = role === 'admin' ? p.admin : p.member;
+      return `<div style="background:var(--surface2);border-radius:var(--radius-sm);padding:0.75rem;display:flex;flex-direction:column;gap:5px">
+        <div style="font-size:11px;color:var(--text2)">${p.label}</div>
+        <div style="font-size:12px;font-weight:600;color:${has?'var(--success)':'var(--danger)'}">${has ? '✓ Allowed' : '✗ Restricted'}</div>
+      </div>`;
+    }).join('');
+  }
+
+  // ─── SERVICE STATUS ─────────────────────────────────────────────
+  function renderServiceStatus() {
+    const services = [
+      { name: 'Authentication', status: 'active', icon: '🔐' },
+      { name: 'Firestore', status: 'active', icon: '🗄️' },
+      { name: 'FCM Push', status: 'active', icon: '🔔' },
+      { name: 'Analytics', status: 'active', icon: '📊' },
+      { name: 'Crashlytics', status: 'active', icon: '🛡️' },
+    ];
+    const el = document.getElementById('service-status');
+    if (!el) return;
+    el.style.gridTemplateColumns = 'repeat(5,1fr)';
+    el.innerHTML = services.map(s => `
+      <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:0.75rem">
+        <div style="font-size:18px;margin-bottom:5px">${s.icon}</div>
+        <div style="font-size:12px;font-weight:500;color:var(--text)">${s.name}</div>
+        <div style="font-size:11px;color:var(--success);margin-top:3px">● Active</div>
+      </div>`).join('');
+  }
+
+  // ─── WEEKLY BARS ────────────────────────────────────────────────
+  function renderWeeklyBars() {
+    const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+    const vals = [3,7,5,9,4,2,6];
+    const max = Math.max(...vals);
+    document.getElementById('weekly-bars').innerHTML = vals.map((v,i) => `<div class="bar" style="height:${Math.round(v/max*100)}%" title="${days[i]}: ${v} actions"></div>`).join('');
+    document.getElementById('weekly-labels').innerHTML = days.map(d => `<div class="bar-label">${d}</div>`).join('');
+  }
+
+  // ─── NAVIGATION ─────────────────────────────────────────────────
+  window.navigate = (page) => {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById('page-'+page).classList.add('active');
+    document.querySelectorAll('.nav-item').forEach(n => {
+      if (n.getAttribute('onclick')?.includes(`'${page}'`)) n.classList.add('active');
+    });
+    const titles = { dashboard:'Dashboard', tasks:'Tasks', chat:'Team Chat', notifications:'Notifications', fcm:'🔔 Push Notifications (FCM)', analytics:'📊 Firebase Analytics', crashlytics:'🛡️ Crashlytics', profile:'Profile' };
+    document.getElementById('topbar-title').textContent = titles[page] || page;
+    document.getElementById('topbar-add-task').style.display = page === 'tasks' ? 'block' : 'none';
+    if (page === 'notifications') document.getElementById('notif-badge').textContent = '0';
+    if (page === 'fcm') { updateFCMPayloadPreview(); checkFCMRequirements(); }
+    if (page === 'crashlytics') { updateCrashlyticsUI(); renderCrashCustomKeys(); }
+    if (page === 'analytics') { updateAnalyticsEventLog(); renderAnalyticsUserProps(); updateAnalyticsStatusBanner(); }
+    logAnalyticsEvent('screen_view', { screen_name: page, screen_class: 'TeamSync' });
+  };
+
+  window.copyToken = () => {
+    if (window._jwtToken) {
+      navigator.clipboard.writeText(window._jwtToken).then(() => toast('JWT token copied!', 'success'));
+    }
+  };
+</script>
+</body>
+</html>
